@@ -29,6 +29,7 @@ import {
 interface TaskCreateModalProps {
   trigger?: React.ReactNode;
   onTaskCreate?: (task: any) => void;
+  initialStatus?: string; // 칸반 컬럼에서 사용할 초기 상태
 }
 
 const mockTeamMembers = [
@@ -47,7 +48,7 @@ const priorityOptions = [
 
 const commonTags = ["디자인", "개발", "백엔드", "프론트엔드", "테스트", "기획", "문서화", "버그수정"];
 
-export function TaskCreateModal({ trigger, onTaskCreate }: TaskCreateModalProps) {
+export function TaskCreateModal({ trigger, onTaskCreate, initialStatus }: TaskCreateModalProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -72,7 +73,7 @@ export function TaskCreateModal({ trigger, onTaskCreate }: TaskCreateModalProps)
       id: Date.now().toString(),
       title: title.trim(),
       description: description.trim(),
-      status: "pending",
+      status: initialStatus || "pending",
       priority,
       assignee: assignee || mockTeamMembers[0],
       dueDate: dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

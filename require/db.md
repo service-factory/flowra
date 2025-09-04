@@ -220,7 +220,30 @@ CREATE INDEX idx_task_tags_task_id ON task_tags(task_id);
 CREATE INDEX idx_task_tags_tag ON task_tags(tag);
 ```
 
-#### 2.4.3 task_comments 테이블
+#### 2.4.3 team_tags 테이블 (팀별 태그 관리)
+```sql
+CREATE TABLE team_tags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  color VARCHAR(7) DEFAULT '#6B7280',
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  usage_count INTEGER DEFAULT 0,
+  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(team_id, name)
+);
+
+-- 인덱스
+CREATE INDEX idx_team_tags_team_id ON team_tags(team_id);
+CREATE INDEX idx_team_tags_name ON team_tags(name);
+CREATE INDEX idx_team_tags_is_active ON team_tags(is_active);
+CREATE INDEX idx_team_tags_usage_count ON team_tags(usage_count);
+```
+
+#### 2.4.4 task_comments 테이블
 ```sql
 CREATE TABLE task_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -240,7 +263,7 @@ CREATE INDEX idx_task_comments_parent_id ON task_comments(parent_id);
 CREATE INDEX idx_task_comments_created_at ON task_comments(created_at);
 ```
 
-#### 2.4.4 task_history 테이블
+#### 2.4.5 task_history 테이블
 ```sql
 CREATE TABLE task_history (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -261,7 +284,7 @@ CREATE INDEX idx_task_history_action ON task_history(action);
 CREATE INDEX idx_task_history_created_at ON task_history(created_at);
 ```
 
-#### 2.4.5 task_dependencies 테이블
+#### 2.4.6 task_dependencies 테이블
 ```sql
 CREATE TABLE task_dependencies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -485,6 +508,71 @@ CREATE POLICY "Assignees and admins can update tasks" ON tasks
       AND tm.is_active = true
     )
   );
+
+-- task_tags 테이블 RLS
+ALTER TABLE task_tags ENABLE ROW LEVEL SECURITY;
+
+-- 팀 멤버만 태그 조회 가능
+CREATE POLICY "Team members can view task tags" ON task_tags
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM tasks t
+      JOIN team_members tm ON tm.team_id = t.team_id
+      WHERE t.id = task_tags.task_id
+      AND tm.user_id = auth.uid()
+      AND tm.is_active = true
+    )
+  );
+
+-- 팀 멤버만 태그 생성 가능
+CREATE POLICY "Team members can create task tags" ON task_tags
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM tasks t
+      JOIN team_members tm ON tm.team_id = t.team_id
+      WHERE t.id = task_tags.task_id
+      AND tm.user_id = auth.uid()
+      AND tm.is_active = true
+    )
+  );
+
+-- 팀 멤버만 태그 삭제 가능
+CREATE POLICY "Team members can delete task tags" ON task_tags
+  FOR DELETE USING (
+    EXISTS (
+      SELECT 1 FROM tasks t
+      JOIN team_members tm ON tm.team_id = t.team_id
+      WHERE t.id = task_tags.task_id
+      AND tm.user_id = auth.uid()
+      AND tm.is_active = true
+    )
+  );
+
+-- team_tags 테이블 RLS
+ALTER TABLE team_tags ENABLE ROW LEVEL SECURITY;
+
+-- 팀 멤버만 팀 태그 조회 가능
+CREATE POLICY "Team members can view team tags" ON team_tags
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM team_members tm
+      WHERE tm.team_id = team_tags.team_id
+      AND tm.user_id = auth.uid()
+      AND tm.is_active = true
+    )
+  );
+
+-- 팀 관리자만 팀 태그 생성/수정/삭제 가능
+CREATE POLICY "Team admins can manage team tags" ON team_tags
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM team_members tm
+      WHERE tm.team_id = team_tags.team_id
+      AND tm.user_id = auth.uid()
+      AND tm.role = 'admin'
+      AND tm.is_active = true
+    )
+  );
 ```
 
 ## 4. 데이터베이스 함수 및 트리거
@@ -508,6 +596,9 @@ CREATE TRIGGER update_teams_updated_at BEFORE UPDATE ON teams
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_team_tags_updated_at BEFORE UPDATE ON team_tags
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
@@ -580,6 +671,48 @@ CREATE TRIGGER task_assignment_notification_trigger
   FOR EACH ROW EXECUTE FUNCTION create_task_assignment_notification();
 ```
 
+### 4.4 태그 사용량 자동 업데이트
+```sql
+-- 태그 사용량 업데이트 함수
+CREATE OR REPLACE FUNCTION update_tag_usage_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- 태그 추가 시
+  IF TG_OP = 'INSERT' THEN
+    UPDATE team_tags 
+    SET usage_count = usage_count + 1,
+        updated_at = NOW()
+    WHERE team_id = (
+      SELECT t.team_id 
+      FROM tasks t 
+      WHERE t.id = NEW.task_id
+    )
+    AND name = NEW.tag;
+  END IF;
+
+  -- 태그 삭제 시
+  IF TG_OP = 'DELETE' THEN
+    UPDATE team_tags 
+    SET usage_count = GREATEST(usage_count - 1, 0),
+        updated_at = NOW()
+    WHERE team_id = (
+      SELECT t.team_id 
+      FROM tasks t 
+      WHERE t.id = OLD.task_id
+    )
+    AND name = OLD.tag;
+  END IF;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ language 'plpgsql';
+
+-- task_tags 테이블에 트리거 적용
+CREATE TRIGGER task_tags_usage_count_trigger
+  AFTER INSERT OR DELETE ON task_tags
+  FOR EACH ROW EXECUTE FUNCTION update_tag_usage_count();
+```
+
 ## 5. 데이터베이스 뷰
 
 ### 5.1 업무 통계 뷰
@@ -618,6 +751,58 @@ WHERE tm.is_active = true
 GROUP BY tm.team_id, tm.user_id, u.name, u.email;
 ```
 
+### 5.3 태그 통계 뷰
+```sql
+CREATE VIEW tag_statistics AS
+SELECT 
+  tt.team_id,
+  tt.name as tag_name,
+  tt.color as tag_color,
+  tt.usage_count,
+  COUNT(DISTINCT t.id) as task_count,
+  COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'completed') as completed_task_count,
+  COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'in_progress') as in_progress_task_count,
+  COUNT(DISTINCT t.id) FILTER (WHERE t.status = 'pending') as pending_task_count,
+  AVG(EXTRACT(EPOCH FROM (t.completed_at - t.created_at))/3600) as avg_completion_hours
+FROM team_tags tt
+LEFT JOIN task_tags ttag ON tt.team_id = (
+  SELECT t.team_id 
+  FROM tasks t 
+  WHERE t.id = ttag.task_id
+) AND tt.name = ttag.tag
+LEFT JOIN tasks t ON ttag.task_id = t.id
+WHERE tt.is_active = true
+GROUP BY tt.team_id, tt.name, tt.color, tt.usage_count;
+```
+
+### 5.4 업무 태그 뷰 (업무와 태그 정보 통합)
+```sql
+CREATE VIEW tasks_with_tags AS
+SELECT 
+  t.*,
+  u_assignee.name as assignee_name,
+  u_assignee.email as assignee_email,
+  u_creator.name as creator_name,
+  u_creator.email as creator_email,
+  p.name as project_name,
+  p.color as project_color,
+  COALESCE(
+    json_agg(
+      json_build_object(
+        'tag', ttag.tag,
+        'color', ttag.color
+      )
+    ) FILTER (WHERE ttag.tag IS NOT NULL),
+    '[]'::json
+  ) as tags
+FROM tasks t
+LEFT JOIN users u_assignee ON t.assignee_id = u_assignee.id
+LEFT JOIN users u_creator ON t.creator_id = u_creator.id
+LEFT JOIN projects p ON t.project_id = p.id
+LEFT JOIN task_tags ttag ON t.id = ttag.task_id
+GROUP BY t.id, u_assignee.name, u_assignee.email, u_creator.name, u_creator.email, p.name, p.color;
+```
+
 ## 6. 데이터베이스 마이그레이션
 
 ### 6.1 초기 마이그레이션
@@ -637,6 +822,10 @@ GROUP BY tm.team_id, tm.user_id, u.name, u.email;
 -- 004_add_functions_triggers.sql
 -- 비즈니스 로직을 위한 함수 및 트리거 생성
 -- (위의 함수 및 트리거들 포함)
+
+-- 005_add_tag_system.sql
+-- 태그 시스템 관련 테이블 및 기능 추가
+-- (team_tags 테이블, 태그 관련 RLS, 함수, 트리거 포함)
 ```
 
 ### 6.2 데이터 시딩
@@ -652,6 +841,11 @@ INSERT INTO system_settings (key, value, description, is_public) VALUES
 
 -- 기본 알림 타입 설정 (사용자 생성 시 자동으로 생성되도록 트리거 사용)
 -- 실제로는 사용자가 가입할 때마다 자동으로 생성됨
+
+-- 기본 태그 색상 팔레트
+INSERT INTO system_settings (key, value, description, is_public) VALUES
+('tag_color_palette', '["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#F43F5E", "#6366F1", "#06B6D4", "#F97316"]', '태그 색상 팔레트', true),
+('default_tag_colors', '{"frontend": "#3B82F6", "backend": "#6366F1", "design": "#8B5CF6", "testing": "#F97316", "urgent": "#F43F5E", "completed": "#10B981", "pending": "#F59E0B", "infrastructure": "#06B6D4"}', '기본 태그 색상 매핑', true);
 ```
 
 ## 7. 성능 최적화

@@ -7,17 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/logo";
 import { 
   CheckCircle, 
-  Clock, 
   Users, 
-  MessageSquare, 
   Zap, 
-  Shield, 
   Star,
   ArrowRight,
   Play,
   Sparkles,
   Target,
-  Calendar,
   Bell,
   Bot
 } from "lucide-react";
