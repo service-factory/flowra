@@ -8,21 +8,20 @@ import React from "react";
 
 interface Props {
   task: any;
-  selected: boolean;
-  onToggleSelect: () => void;
   getTagColor: (tag: string) => string;
   onToggleTag: (tag: string) => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
   getPriorityColor: (p: string) => string;
   getPriorityIcon: (p: string) => React.ReactNode;
+  onTaskClick: (task: any) => void;
 }
 
-export function TaskListCard({ task, selected, onToggleSelect, getTagColor, onToggleTag, getStatusColor, getStatusText, getPriorityColor, getPriorityIcon }: Props) {
+export function TaskListCard({ task, getTagColor, onToggleTag, getStatusColor, getStatusText, getPriorityColor, getPriorityIcon, onTaskClick }: Props) {
   return (
-    <div className={`group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 ${selected ? 'ring-2 ring-blue-500/50 border-blue-300 bg-blue-50/50 dark:bg-blue-950/20' : ''}`}>
+    <div className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 mb-2 hover:shadow-sm hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer"
+      onClick={() => onTaskClick(task)}>
       <div className="flex items-center space-x-3">
-        <input type="checkbox" checked={selected} onChange={onToggleSelect} className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
             <h4 className="font-medium text-gray-900 dark:text-white hover:text-blue-600 cursor-pointer truncate">{task.title}</h4>

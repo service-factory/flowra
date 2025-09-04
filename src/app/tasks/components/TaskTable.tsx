@@ -7,26 +7,24 @@ import { MoreHorizontal } from "lucide-react";
 
 interface Props {
   tasks: any[];
-  selectedTasks: string[];
-  onToggleSelect: (taskId: string) => void;
   onToggleTag: (tag: string) => void;
   getTagColor: (tag: string) => string;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
   getPriorityColor: (p: string) => string;
   getPriorityIcon: (p: string) => React.ReactNode;
+  onTaskClick: (task: any) => void;
 }
 
 export function TaskTable({
   tasks,
-  selectedTasks,
-  onToggleSelect,
   onToggleTag,
   getTagColor,
   getStatusColor,
   getStatusText,
   getPriorityColor,
   getPriorityIcon,
+  onTaskClick,
 }: Props) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -34,7 +32,6 @@ export function TaskTable({
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"></th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">업무</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">상태</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">담당자</th>
@@ -45,15 +42,7 @@ export function TaskTable({
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {tasks.map((task) => (
-              <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selectedTasks.includes(task.id)}
-                    onChange={() => onToggleSelect(task.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                </td>
+              <tr key={task.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors cursor-pointer" onClick={() => onTaskClick(task)}>
                 <td className="px-4 py-3">
                   <div className="min-w-0">
                     <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">{task.title}</div>

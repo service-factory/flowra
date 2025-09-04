@@ -30,6 +30,7 @@ interface TaskCreateModalProps {
   trigger?: React.ReactNode;
   onTaskCreate?: (task: any) => void;
   initialStatus?: string; // 칸반 컬럼에서 사용할 초기 상태
+  initialDueDate?: string; // 캘린더에서 특정 날짜에 Task 생성 시 사용
 }
 
 const mockTeamMembers = [
@@ -48,12 +49,12 @@ const priorityOptions = [
 
 const commonTags = ["디자인", "개발", "백엔드", "프론트엔드", "테스트", "기획", "문서화", "버그수정"];
 
-export function TaskCreateModal({ trigger, onTaskCreate, initialStatus }: TaskCreateModalProps) {
+export function TaskCreateModal({ trigger, onTaskCreate, initialStatus, initialDueDate }: TaskCreateModalProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assignee, setAssignee] = useState<any>(null);
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(initialDueDate || "");
   const [priority, setPriority] = useState("medium");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
@@ -76,7 +77,7 @@ export function TaskCreateModal({ trigger, onTaskCreate, initialStatus }: TaskCr
       status: initialStatus || "pending",
       priority,
       assignee: assignee || mockTeamMembers[0],
-      dueDate: dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dueDate: dueDate || initialDueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       progress: 0,
@@ -92,7 +93,7 @@ export function TaskCreateModal({ trigger, onTaskCreate, initialStatus }: TaskCr
     setTitle("");
     setDescription("");
     setAssignee(null);
-    setDueDate("");
+    setDueDate(initialDueDate || "");
     setPriority("medium");
     setTags([]);
     setNewTag("");

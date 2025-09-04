@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 import {
-  CheckCircle,
   Target,
   List,
-  Trash2,
-  Archive,
-  User,
   ChevronDown,
   Kanban,
   Table,
@@ -17,7 +13,6 @@ import {
   Square,
   Circle,
   Triangle,
-  X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +23,7 @@ import { TaskListCard } from "./components/TaskListCard";
 import { TagFilterPanel } from "./components/TagFilterPanel";
 import { KanbanBoard } from "./components/KanbanBoard";
 import { TaskTable } from "./components/TaskTable";
+import { TaskDetailDrawer } from "./components/TaskDetailDrawer";
 
 // Mock data - 실제로는 API에서 가져올 데이터
 const mockTasks = [
@@ -165,11 +161,6 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState(mockTasks);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"kanban" | "list" | "table">("kanban");
-  const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [groupBy, setGroupBy] = useState("status");
   const [showCompleted, setShowCompleted] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showTagFilter, setShowTagFilter] = useState(false);
@@ -177,6 +168,8 @@ export default function TasksPage() {
   const [assigneeFilter, setAssigneeFilter] = useState<"all" | "me" | null>(null);
   const [dueFilter, setDueFilter] = useState<"today" | "this_week" | "overdue" | null>(null);
   const [priorityFilter, setPriorityFilter] = useState<"high" | "medium" | "low" | null>(null);
+  const [selectedTask, setSelectedTask] = useState<typeof mockTasks[0] | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -207,14 +200,6 @@ export default function TasksPage() {
     }
   };
 
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case "high": return "높음";
-      case "medium": return "보통";
-      case "low": return "낮음";
-      default: return priority;
-    }
-  };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
@@ -262,12 +247,6 @@ export default function TasksPage() {
     return d >= new Date(monday.toDateString()) && d <= new Date(sunday.toDateString());
   };
 
-  const isOverdue = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const today = new Date();
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-    return d < endOfToday && ["completed", "cancelled"].includes((null as any)) === false && true && (true);
-  };
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -312,30 +291,18 @@ export default function TasksPage() {
     }
   ];
 
-  const groupedTasks = kanbanColumns.map(column => ({
-    ...column,
-    tasks: filteredTasks.filter(task => task.status === column.id),
-    count: filteredTasks.filter(task => task.status === column.id).length
-  }));
 
-  const handleTaskSelect = (taskId: string) => {
-    setSelectedTasks(prev => 
-      prev.includes(taskId) 
-        ? prev.filter(id => id !== taskId)
-        : [...prev, taskId]
-    );
-  };
 
-  const handleSelectAll = () => {
-    setSelectedTasks(
-      selectedTasks.length === filteredTasks.length 
-        ? [] 
-        : filteredTasks.map(task => task.id)
-    );
-  };
-
-  const handleTaskCreate = (newTask: any) => {
+  const handleTaskCreate = (newTask: typeof mockTasks[0]) => {
     setTasks(prev => [newTask, ...prev]);
+  };
+
+  const handleTaskMove = (taskId: string, newStatus: string) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, status: newStatus, updatedAt: new Date().toISOString().split('T')[0] }
+        : task
+    ));
   };
 
   const handleTagToggle = (tag: string) => {
@@ -359,6 +326,30 @@ export default function TasksPage() {
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 600);
+  };
+
+
+  // Task 상세 drawer 핸들러들
+  const handleTaskClick = (task: typeof mockTasks[0]) => {
+    setSelectedTask(task);
+    setIsDrawerOpen(true);
+  };
+
+  const handleTaskUpdate = (updatedTask: typeof mockTasks[0]) => {
+    setTasks(prev => prev.map(task => 
+      task.id === updatedTask.id ? updatedTask : task
+    ));
+  };
+
+  const handleTaskDelete = (taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+    setIsDrawerOpen(false);
+    setSelectedTask(null);
+  };
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    setSelectedTask(null);
   };
 
   // 컴포넌트로 분리 (Kanban/List)
@@ -478,48 +469,9 @@ export default function TasksPage() {
                 <span>개 태그 필터</span>
               </div>
             )}
-            {selectedTasks.length > 0 && (
-              <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
-                <span className="font-medium">{selectedTasks.length}</span>
-                <span>개 선택됨</span>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* 벌크 액션 - Monday.com 스타일 */}
-        {selectedTasks.length > 0 && (
-          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  {selectedTasks.length}개 업무가 선택되었습니다
-                </span>
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 h-6 w-6 p-0">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/30 h-8 px-3">
-                  <CheckCircle className="h-4 w-4 mr-1.5" />
-                  완료로 변경
-                </Button>
-                <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/30 h-8 px-3">
-                  <User className="h-4 w-4 mr-1.5" />
-                  담당자 변경
-                </Button>
-                <Button variant="outline" size="sm" className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-300 dark:hover:bg-blue-900/30 h-8 px-3">
-                  <Archive className="h-4 w-4 mr-1.5" />
-                  보관
-                </Button>
-                <Button variant="outline" size="sm" className="border-red-300 text-red-700 hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30 h-8 px-3">
-                  <Trash2 className="h-4 w-4 mr-1.5" />
-                  삭제
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* 칸반 보드 - Monday.com 스타일 */}
         {viewMode === "kanban" && (
@@ -532,9 +484,9 @@ export default function TasksPage() {
             getStatusText={getStatusText}
             getPriorityColor={getPriorityColor}
             getPriorityIcon={getPriorityIcon}
-            selectedTasks={selectedTasks}
-            onToggleSelect={handleTaskSelect}
             onTaskCreate={handleTaskCreate}
+            onTaskMove={handleTaskMove}
+            onTaskClick={handleTaskClick}
           />
         )}
 
@@ -546,14 +498,13 @@ export default function TasksPage() {
                 <TaskListCard
                   key={task.id}
                   task={task}
-                  selected={selectedTasks.includes(task.id)}
-                  onToggleSelect={() => handleTaskSelect(task.id)}
                   getTagColor={getTagColor}
                   onToggleTag={handleTagToggle}
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   getPriorityColor={getPriorityColor}
                   getPriorityIcon={getPriorityIcon}
+                  onTaskClick={handleTaskClick}
                 />
               ))
             ) : (
@@ -575,17 +526,26 @@ export default function TasksPage() {
         {viewMode === "table" && (
           <TaskTable
             tasks={filteredTasks}
-            selectedTasks={selectedTasks}
-            onToggleSelect={handleTaskSelect}
             onToggleTag={handleTagToggle}
             getTagColor={getTagColor}
             getStatusColor={getStatusColor}
             getStatusText={getStatusText}
             getPriorityColor={getPriorityColor}
             getPriorityIcon={getPriorityIcon}
+            onTaskClick={handleTaskClick}
           />
         )}
       </div>
+
+      {/* Task 상세 Drawer */}
+      <TaskDetailDrawer
+        task={selectedTask}
+        isOpen={isDrawerOpen}
+        onClose={handleDrawerClose}
+        onUpdate={handleTaskUpdate}
+        onDelete={handleTaskDelete}
+        teamMembers={mockTeamMembers}
+      />
     </div>
   );
 }
