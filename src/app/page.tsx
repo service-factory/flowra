@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/logo";
+import { LoginModal } from "@/components/login-modal";
 import { 
   CheckCircle, 
   Users, 
@@ -21,6 +22,7 @@ import { useState, useEffect } from "react";
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   useEffect(() => {
     setIsVisible(true);
@@ -42,16 +44,19 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/auth/login">
-                <Button variant="ghost" className="text-gray-600 hover:text-gray-900">
-                  로그인
-                </Button>
-              </Link>
-              <Link href="/auth/login">
-                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg">
-                  무료로 시작하기
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                className="text-gray-600 hover:text-gray-900"
+                onClick={() => setIsLoginModalOpen(true)}
+              >
+                로그인
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg"
+                onClick={() => setIsLoginModalOpen(true)}
+              >
+                무료로 시작하기
+              </Button>
             </div>
           </div>
         </div>
@@ -85,13 +90,15 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                <Link href="/auth/login">
-                  <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <Zap className="w-5 h-5 mr-2" />
-                    지금 시작하기
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300"
+                  onClick={() => setIsLoginModalOpen(true)}
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  지금 시작하기
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
                 <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <Play className="w-5 h-5 mr-2" />
                   데모 보기
@@ -356,12 +363,14 @@ export default function Home() {
             복잡한 설정 없이, 몇 분 안에 팀의 업무 관리가 완전히 바뀝니다
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/login">
-              <Button size="lg" className="w-full sm:w-auto text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 shadow-xl">
-                <Zap className="w-5 h-5 mr-2" />
-                무료로 시작하기
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="w-full sm:w-auto text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 shadow-xl"
+              onClick={() => setIsLoginModalOpen(true)}
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              무료로 시작하기
+            </Button>
             <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-white text-white hover:bg-white/10">
               <Users className="w-5 h-5 mr-2" />
               팀 초대하기
@@ -419,6 +428,12 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+      />
     </div>
   );
 }

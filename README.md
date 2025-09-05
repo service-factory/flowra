@@ -1,36 +1,138 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flowra - 팀 협업 프로젝트 관리 도구
 
-## Getting Started
+Flowra는 Supabase를 기반으로 한 현대적인 팀 협업 프로젝트 관리 도구입니다.
 
-First, run the development server:
+## 주요 기능
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 🔐 Supabase OAuth 인증 (카카오, 구글)
+- 📋 태스크 관리 (칸반 보드, 리스트 뷰)
+- 👥 팀 관리 및 멤버 초대
+- 📊 프로젝트 진행 상황 추적
+- 🔔 실시간 알림 시스템
+- 📱 반응형 디자인
+
+## 기술 스택
+
+- **Frontend**: Next.js 14, React, TypeScript
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **UI**: Tailwind CSS, shadcn/ui
+- **State Management**: Zustand
+- **Authentication**: Supabase Auth with OAuth
+
+## 시작하기
+
+### 1. 환경 변수 설정
+
+`.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# OAuth Providers (Supabase Dashboard에서 설정)
+# Kakao OAuth
+KAKAO_CLIENT_ID=your_kakao_client_id
+KAKAO_CLIENT_SECRET=your_kakao_client_secret
+
+# Google OAuth  
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# App Configuration
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Supabase 설정
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. [Supabase](https://supabase.com)에서 새 프로젝트를 생성하세요.
+2. 프로젝트 설정에서 OAuth 제공자를 설정하세요:
+   - **카카오**: [카카오 개발자 콘솔](https://developers.kakao.com)에서 앱을 생성하고 OAuth 설정
+   - **구글**: [Google Cloud Console](https://console.cloud.google.com)에서 OAuth 2.0 클라이언트 ID 생성
+3. Supabase Dashboard > Authentication > Providers에서 OAuth 설정을 완료하세요.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. 데이터베이스 설정
 
-## Learn More
+Supabase SQL Editor에서 다음 SQL을 실행하여 필요한 테이블을 생성하세요:
 
-To learn more about Next.js, take a look at the following resources:
+```sql
+-- Users 테이블 (Supabase Auth와 연동)
+CREATE TABLE users (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  email TEXT NOT NULL,
+  name TEXT NOT NULL,
+  avatar_url TEXT,
+  provider TEXT NOT NULL,
+  provider_id TEXT NOT NULL,
+  discord_id TEXT,
+  timezone TEXT DEFAULT 'Asia/Seoul',
+  email_verified BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  last_login_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+-- RLS (Row Level Security) 정책 설정
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+-- 사용자는 자신의 정보만 조회/수정 가능
+CREATE POLICY "Users can view own profile" ON users
+  FOR SELECT USING (auth.uid() = id);
 
-## Deploy on Vercel
+CREATE POLICY "Users can update own profile" ON users
+  FOR UPDATE USING (auth.uid() = id);
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+-- 추가 테이블들 (teams, projects, tasks 등)은 기존 스키마 참조
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. 개발 서버 실행
+
+```bash
+# 의존성 설치
+npm install
+
+# 개발 서버 실행
+npm run dev
+```
+
+[http://localhost:3000](http://localhost:3000)에서 애플리케이션을 확인할 수 있습니다.
+
+## 프로젝트 구조
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API 라우트
+│   │   └── auth/          # 인증 관련 API
+│   ├── auth/              # 인증 페이지
+│   ├── dashboard/         # 대시보드
+│   ├── tasks/             # 태스크 관리
+│   └── team/              # 팀 관리
+├── components/            # 재사용 가능한 컴포넌트
+│   └── ui/               # UI 컴포넌트
+├── lib/                  # 유틸리티 및 설정
+│   └── supabase/         # Supabase 클라이언트
+├── store/                # 상태 관리 (Zustand)
+└── types/                # TypeScript 타입 정의
+```
+
+## 배포
+
+### Vercel 배포
+
+1. GitHub에 코드를 푸시하세요.
+2. [Vercel](https://vercel.com)에서 프로젝트를 연결하세요.
+3. 환경 변수를 설정하세요.
+4. 배포를 완료하세요.
+
+### Supabase 프로덕션 설정
+
+1. Supabase 프로젝트 설정에서 프로덕션 URL과 키를 확인하세요.
+2. OAuth 리다이렉트 URL을 프로덕션 도메인으로 업데이트하세요.
+3. 환경 변수를 프로덕션 값으로 설정하세요.
+
+## 라이선스
+
+MIT License
