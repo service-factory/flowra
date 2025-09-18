@@ -1,25 +1,73 @@
 "use client";
 
 import { useState, useMemo } from "react";
-
-import { HeaderBar } from "@/components/header-bar";
-import { TaskCreateModal } from "@/components/task-create-modal";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useTeamData } from "@/hooks/useTeamData";
+import { useTaskHandlers } from "@/hooks/useTaskHandlers";
+import { useAuth } from "@/hooks/useAuth";
+import { LeftNavigationBar } from "@/components/left-navigation-bar";
+import { CalendarHeader } from "./components/CalendarHeader";
 import { CalendarView } from "./components/CalendarView";
+import TaskCreateModal from "@/components/task-create-modal";
 import { TaskDetailDrawer } from "../tasks/components/TaskDetailDrawer";
-import { mockTasksWithDetails, mockUsers } from "@/data/mockData";
-import { TaskWithDetails } from "@/types/database";
-import { adaptTaskForDrawer, adaptTaskFromDrawer } from "@/utils/taskAdapter";
+import { TeamGuard } from "@/components/team-guard";
+import { TeamCreateModal } from "@/components/team-create-modal";
+import { Task } from "@/types";
 
 export default function CalendarPage() {
-  const [tasks, setTasks] = useState<TaskWithDetails[]>(mockTasksWithDetails);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
-  const [selectedTask, setSelectedTask] = useState<TaskWithDetails | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isLnbCollapsed, setIsLnbCollapsed] = useState(true);
+  const [isTaskCreateOpen, setIsTaskCreateOpen] = useState(false);
+  const [taskCreateInitials, setTaskCreateInitials] = useState<{ initialStatus?: string; initialDueDate?: string }>({});
+  const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const teamId = searchParams.get('teamId');
+  
+  const { teamMemberships, currentTeam, refreshTeamData, isLoading: authLoading, user } = useAuth();
+  
+  const actualTeamId = useMemo(() => {
+    if (teamId === '0' || !teamId) {
+      return currentTeam?.id || null;
+    }
+    return teamId;
+  }, [teamId, currentTeam?.id]);
+
+  // URL에서 뷰 모드 관리
+  const viewMode = (searchParams.get('view') as "month" | "week" | "day") || 'month';
+  
+  const setViewMode = (mode: "month" | "week" | "day") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', mode);
+    router.push(`?${params.toString()}`);
+  };
+
+  const { 
+    data: teamData, 
+    isLoading, 
+    refetch 
+  } = useTeamData(actualTeamId);
+  
+  const tasks = useMemo(() => teamData?.tasks || [], [teamData?.tasks]);
+  const teamMembers = useMemo(() => teamData?.members || [], [teamData?.members]);
+  const projects = useMemo(() => teamData?.projects || [], [teamData?.projects]);
+
+  const {
+    selectedTask,
+    isDrawerOpen,
+    handleTaskCreate,
+    handleTaskClick,
+    handleTaskUpdate,
+    handleTaskDelete,
+    handleDrawerClose,
+    handleRefresh,
+  } = useTaskHandlers({ refetch, tasks });
+
 
   // 날짜별로 태스크 그룹화
   const tasksByDate = useMemo(() => {
-    const grouped: { [key: string]: TaskWithDetails[] } = {};
+    const grouped: { [key: string]: Task[] } = {};
     
     tasks.forEach(task => {
       if (task.due_date) {
@@ -85,41 +133,35 @@ export default function CalendarPage() {
     }
   };
 
-  const handleTaskCreate = (newTask: TaskWithDetails) => {
-    setTasks(prev => [newTask, ...prev]);
+  const taskCreateModalProps = useMemo(() => {
+    const props = {
+      teamId: actualTeamId || undefined,
+      teamMembers,
+      projects,
+      isLoading
+    };
+    return props;
+  }, [actualTeamId, teamMembers, projects, isLoading]);
+
+  const teams = teamMemberships.map(membership => ({
+    id: membership.team_id,
+    name: currentTeam?.name || '팀',
+    slug: currentTeam?.slug || 'team',
+    description: currentTeam?.description,
+    color: (currentTeam?.settings as Record<string, unknown>)?.color as string || 'blue',
+    icon: (currentTeam?.settings as Record<string, unknown>)?.icon as string || 'Building2',
+    is_active: currentTeam?.is_active || true
+  }));
+
+  const openTaskCreateModal = (opts?: { initialStatus?: string; initialDueDate?: string }) => {
+    setTaskCreateInitials({ initialStatus: opts?.initialStatus, initialDueDate: opts?.initialDueDate });
+    setIsTaskCreateOpen(true);
   };
 
   const handleTaskMove = (taskId: string, newDueDate: string) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, due_date: newDueDate, updated_at: new Date().toISOString() }
-        : task
-    ));
-  };
-
-  const handleTaskClick = (task: TaskWithDetails) => {
-    console.log('Task clicked:', task);
-    setSelectedTask(task);
-    setIsDrawerOpen(true);
-    console.log('Drawer should be open:', true);
-  };
-
-  const handleTaskUpdate = (updatedTask: TaskWithDetails) => {
-    const adaptedTask = adaptTaskFromDrawer(updatedTask);
-    setTasks(prev => prev.map(task => 
-      task.id === adaptedTask.id ? adaptedTask : task
-    ));
-  };
-
-  const handleTaskDelete = (taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
-    setIsDrawerOpen(false);
-    setSelectedTask(null);
-  };
-
-  const handleDrawerClose = () => {
-    setIsDrawerOpen(false);
-    setSelectedTask(null);
+    // TODO: API 호출로 task 업데이트
+    console.log('Task move:', { taskId, newDueDate });
+    refetch();
   };
 
   const navigateDate = (direction: "prev" | "next") => {
@@ -145,51 +187,93 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      <HeaderBar
-        title="Calendar"
-        subtitle="일정 관리"
-        showCalendarControls={true}
-        currentDate={currentDate}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onNavigate={navigateDate}
-        onGoToToday={goToToday}
-        rightActions={(
-          <div className="flex items-center space-x-2">
-            <TaskCreateModal onTaskCreate={handleTaskCreate} />
-          </div>
-        )}
-      />
+    <TeamGuard>
+      <div className="h-screen flex flex-col">
+        <LeftNavigationBar
+          title="Calendar"
+          subtitle={currentTeam?.name || "Flowra Team"}
+          isCollapsed={isLnbCollapsed}
+          onToggleCollapse={() => setIsLnbCollapsed(!isLnbCollapsed)}
+          activePage="calendar"
+          teams={teams}
+          currentTeam={currentTeam}
+          onTeamChange={(team) => {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('teamId', team.id);
+            router.push(newUrl.pathname + newUrl.search);
+          }}
+          onCreateTeam={() => {
+            setIsTeamCreateModalOpen(true);
+          }}
+        />
 
-      <div className="flex-1 px-4 py-4 mx-auto w-full overflow-hidden">
-        {/* 캘린더 뷰 */}
-        <CalendarView
+      <div className="flex-1 flex flex-col px-4 py-4 ml-16 overflow-hidden">
+        {/* 캘린더 헤더 */}
+        <CalendarHeader
           currentDate={currentDate}
           viewMode={viewMode}
-          tasksByDate={tasksByDate}
-          onTaskClick={handleTaskClick}
+          onViewModeChange={setViewMode}
+          onNavigate={navigateDate}
+          onGoToToday={goToToday}
           onTaskCreate={handleTaskCreate}
-          onTaskMove={handleTaskMove}
-          getStatusText={getStatusText}
-          getPriorityIcon={getPriorityIcon}
+          openTaskCreateModal={openTaskCreateModal}
         />
+        {/* 캘린더 뷰 */}
+        <div className="flex-1 overflow-hidden">
+          <CalendarView
+            currentDate={currentDate}
+            viewMode={viewMode}
+            tasksByDate={tasksByDate}
+            onTaskClick={handleTaskClick}
+            onTaskCreate={handleTaskCreate}
+            onTaskMove={handleTaskMove}
+            getStatusText={getStatusText}
+            getPriorityIcon={getPriorityIcon}
+            openTaskCreateModal={openTaskCreateModal}
+          />
+        </div>
       </div>
 
-      {/* Task 상세 Drawer */}
-      <TaskDetailDrawer
-        task={selectedTask ? adaptTaskForDrawer(selectedTask) : null}
-        isOpen={isDrawerOpen}
-        onClose={handleDrawerClose}
-        onUpdate={(updatedTask: TaskWithDetails) => handleTaskUpdate(updatedTask)}
-        onDelete={handleTaskDelete}
-        teamMembers={mockUsers.map(user => ({
-          id: user.id,
-          name: user.name,
-          avatar: user.avatar_url || "/avatars/default.jpg",
-          email: user.email
-        }))}
-      />
-    </div>
+        {/* TaskCreateModal */}
+        <TaskCreateModal 
+          {...taskCreateModalProps}
+          onTaskCreate={handleTaskCreate}
+          key="task-create-modal-in-calendar-page"
+          open={isTaskCreateOpen}
+          onOpenChange={setIsTaskCreateOpen}
+          initialStatus={taskCreateInitials.initialStatus}
+          initialDueDate={taskCreateInitials.initialDueDate}
+        />
+
+        {/* Task 상세 Drawer */}
+        <TaskDetailDrawer
+          task={selectedTask}
+          isOpen={isDrawerOpen}
+          onClose={handleDrawerClose}
+          onUpdate={handleTaskUpdate}
+          onDelete={handleTaskDelete}
+          teamMembers={teamMembers.map(member => ({
+            id: member.id,
+            name: member.name,
+            avatar_url: member.avatar_url,
+            email: member.email
+          }))}
+        />
+
+        {/* Team Create Modal */}
+        <TeamCreateModal 
+          isOpen={isTeamCreateModalOpen} 
+          onClose={() => setIsTeamCreateModalOpen(false)}
+          onCreate={async () => {
+            await refreshTeamData();
+            if (currentTeam) {
+              window.location.href = `/calendar?teamId=${currentTeam.id}`;
+            } else {
+              window.location.href = '/calendar?teamId=0';
+            }
+          }}
+        />
+      </div>
+    </TeamGuard>
   );
 }

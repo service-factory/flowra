@@ -7,18 +7,17 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TaskCreateModal } from "@/components/task-create-modal";
-import { TaskWithDetails } from "@/types/database";
+import { Task } from "@/types";
 
 interface CalendarViewProps {
   currentDate: Date;
   viewMode: "month" | "week" | "day";
-  tasksByDate: { [key: string]: TaskWithDetails[] };
-  onTaskClick: (task: TaskWithDetails) => void;
-  onTaskCreate: (task: TaskWithDetails) => void;
+  tasksByDate: { [key: string]: Task[] };
+  onTaskClick: (task: Task) => void;
   onTaskMove: (taskId: string, newDueDate: string) => void;
   getStatusText: (status: string) => string;
   getPriorityIcon: (priority: string) => string;
+  openTaskCreateModal?: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
 }
 
 // 드래그 가능한 Task 카드 컴포넌트 (구글 캘린더 스타일)
@@ -28,8 +27,8 @@ function DraggableTaskCard({
   getPriorityIcon,
   isCompact = false
 }: { 
-  task: TaskWithDetails; 
-  onTaskClick: (task: TaskWithDetails) => void; 
+  task: Task; 
+  onTaskClick: (task: Task) => void; 
   getPriorityIcon: (priority: string) => string;
   isCompact?: boolean;
 }) {
@@ -57,18 +56,25 @@ function DraggableTaskCard({
       <div
         ref={setNodeRef}
         style={style}
-        {...listeners}
-        {...attributes}
-        onClick={(e) => {
-          console.log('DraggableTaskCard clicked:', task);
-          e.stopPropagation();
-          onTaskClick(task);
-        }}
         className={`text-xs p-1 rounded cursor-pointer hover:shadow-sm transition-all duration-200 ${getGoogleCalendarColor(task.status)} ${
           isDragging ? 'opacity-50' : ''
-        }`}
+        } relative`}
       >
-        <div className="flex items-center space-x-1">
+        {/* 드래그 핸들 */}
+        <div
+          {...listeners}
+          {...attributes}
+          className="absolute top-0 left-0 w-2 h-full cursor-move bg-gray-400 opacity-0 hover:opacity-50 transition-opacity"
+        />
+        
+        {/* 클릭 가능한 콘텐츠 영역 */}
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            onTaskClick(task);
+          }}
+          className="flex items-center space-x-1 pl-2"
+        >
           <span className="text-xs">{getPriorityIcon(task.priority)}</span>
           <span className="truncate font-medium text-xs">{task.title}</span>
         </div>
@@ -80,23 +86,32 @@ function DraggableTaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
-                            onClick={(e) => {
-                        console.log('Week view task clicked:', task);
-                        e.stopPropagation();
-                        onTaskClick(task);
-                      }}
       className={`text-xs p-1.5 rounded cursor-pointer hover:shadow-sm transition-all duration-200 ${getGoogleCalendarColor(task.status)} ${
         isDragging ? 'opacity-50' : ''
-      }`}
+      } relative`}
     >
-      <div className="flex items-center space-x-1 mb-0.5">
-        <span className="text-xs">{getPriorityIcon(task.priority)}</span>
-        <span className="truncate font-medium text-xs">{task.title}</span>
-      </div>
-      <div className="text-xs opacity-75 truncate">
-        {task.assignee?.name || "미할당"}
+      {/* 드래그 핸들 */}
+      <div
+        {...listeners}
+        {...attributes}
+        className="absolute top-0 left-0 w-3 h-full cursor-move bg-gray-400 opacity-0 hover:opacity-50 transition-opacity"
+      />
+      
+      {/* 클릭 가능한 콘텐츠 영역 */}
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          onTaskClick(task);
+        }}
+        className="pl-3"
+      >
+        <div className="flex items-center space-x-1 mb-0.5">
+          <span className="text-xs">{getPriorityIcon(task.priority)}</span>
+          <span className="truncate font-medium text-xs">{task.title}</span>
+        </div>
+        <div className="text-xs opacity-75 truncate">
+          {task.assignee?.name || "미할당"}
+        </div>
       </div>
     </div>
   );
@@ -110,17 +125,17 @@ function DroppableDateCell({
   isTodayDate, 
   dayTasks, 
   onTaskClick, 
-  onTaskCreate, 
-  getPriorityIcon 
+  getPriorityIcon,
+  openTaskCreateModal
 }: {
   date: Date;
   dateKey: string;
   isCurrentMonth: boolean;
   isTodayDate: boolean;
-  dayTasks: TaskWithDetails[];
-  onTaskClick: (task: TaskWithDetails) => void;
-  onTaskCreate: (task: TaskWithDetails) => void;
+  dayTasks: Task[];
+  onTaskClick: (task: Task) => void;
   getPriorityIcon: (priority: string) => string;
+  openTaskCreateModal?: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id: dateKey,
@@ -152,22 +167,14 @@ function DroppableDateCell({
           {date.getDate()}
         </span>
         {isCurrentMonth && (
-          <TaskCreateModal
-            initialDueDate={dateKey}
-            onTaskCreate={(newTask) => {
-              const taskWithDate = { ...newTask, dueDate: dateKey };
-              onTaskCreate(taskWithDate);
-            }}
-            trigger={
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
-            }
-          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
+            onClick={() => openTaskCreateModal?.({ initialDueDate: dateKey })}
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
         )}
       </div>
 
@@ -212,10 +219,10 @@ export function CalendarView({
   viewMode,
   tasksByDate,
   onTaskClick,
-  onTaskCreate,
   onTaskMove,
   getStatusText,
   getPriorityIcon,
+  openTaskCreateModal,
 }: CalendarViewProps) {
   const isToday = (date: Date) => {
     const today = new Date();
@@ -293,7 +300,7 @@ export function CalendarView({
 
     return (
       <DndContext onDragEnd={handleDragEnd}>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm h-full flex flex-col">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm flex-1 flex flex-col">
           {/* 요일 헤더 - 구글 캘린더 스타일 */}
           <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex-shrink-0">
             {weekDays.map((day, index) => (
@@ -327,8 +334,8 @@ export function CalendarView({
                   isTodayDate={isTodayDate}
                   dayTasks={dayTasks}
                   onTaskClick={onTaskClick}
-                  onTaskCreate={onTaskCreate}
                   getPriorityIcon={getPriorityIcon}
+                  openTaskCreateModal={openTaskCreateModal}
                 />
               );
             })}
@@ -343,7 +350,7 @@ export function CalendarView({
     const weekDaysNames = ['월', '화', '수', '목', '금', '토', '일'];
 
     return (
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm h-full flex flex-col">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm flex-1 flex flex-col">
         {/* 요일 헤더 - 구글 캘린더 스타일 */}
         <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex-shrink-0">
           {weekDaysNames.map((day, index) => (
@@ -382,22 +389,14 @@ export function CalendarView({
                   >
                     {date.getDate()}
                   </span>
-                  <TaskCreateModal
-                    initialDueDate={dateKey}
-                    onTaskCreate={(newTask) => {
-                      const taskWithDate = { ...newTask, dueDate: dateKey };
-                      onTaskCreate(taskWithDate);
-                    }}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    }
-                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 dark:hover:bg-blue-900 rounded-full"
+                    onClick={() => openTaskCreateModal?.({ initialDueDate: dateKey })}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
                 </div>
 
                 {/* 태스크 목록 - 구글 캘린더 스타일 */}
@@ -406,7 +405,6 @@ export function CalendarView({
                     <div
                       key={task.id}
                       onClick={(e) => {
-          console.log('DraggableTaskCard clicked:', task);
           e.stopPropagation();
           onTaskClick(task);
         }}
@@ -424,11 +422,11 @@ export function CalendarView({
                       <div className="text-xs opacity-75 truncate">
                         {task.assignee?.name || "미할당"}
                       </div>
-                      {task.tags.length > 0 && (
+                      {task.tags && task.tags.length > 0 && (
                         <div className="flex flex-wrap gap-0.5 mt-1">
                           {task.tags.slice(0, 2).map((tag) => (
-                            <Badge key={tag.id} variant="secondary" className="text-xs px-1 py-0 h-4">
-                              {tag.tag}
+                            <Badge key={typeof tag === 'string' ? tag : tag.id} variant="secondary" className="text-xs px-1 py-0 h-4">
+                              {typeof tag === 'string' ? tag : tag.tag}
                             </Badge>
                           ))}
                         </div>
@@ -450,7 +448,7 @@ export function CalendarView({
     const isTodayDate = isToday(currentDate);
 
     return (
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm flex-1 flex flex-col">
         {/* 날짜 헤더 - 구글 캘린더 스타일 */}
         <div className={`p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 ${
           isTodayDate ? 'bg-blue-50 dark:bg-blue-950/20' : ''
@@ -466,13 +464,12 @@ export function CalendarView({
                 {dayTasks.length}개의 업무
               </p>
             </div>
-            <TaskCreateModal
-              initialDueDate={dateKey}
-              onTaskCreate={(newTask) => {
-                const taskWithDate = { ...newTask, dueDate: dateKey };
-                onTaskCreate(taskWithDate);
-              }}
-            />
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => openTaskCreateModal?.({ initialDueDate: dateKey })}
+            >
+              새 업무
+            </Button>
           </div>
         </div>
 
@@ -529,11 +526,11 @@ export function CalendarView({
                       </span>
                     </div>
                     
-                    {task.tags.length > 0 && (
+                    {task.tags && task.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {task.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag.id} variant="secondary" className="text-xs px-2 py-0">
-                            {tag.tag}
+                          <Badge key={typeof tag === 'string' ? tag : tag.id} variant="secondary" className="text-xs px-2 py-0">
+                            {typeof tag === 'string' ? tag : tag.tag}
                           </Badge>
                         ))}
                       </div>
@@ -551,13 +548,12 @@ export function CalendarView({
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 새로운 업무를 추가하거나 다른 날짜를 확인해보세요.
               </p>
-              <TaskCreateModal
-                initialDueDate={dateKey}
-                onTaskCreate={(newTask) => {
-                  const taskWithDate = { ...newTask, dueDate: dateKey };
-                  onTaskCreate(taskWithDate);
-                }}
-              />
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => openTaskCreateModal?.({ initialDueDate: dateKey })}
+              >
+                새 업무
+              </Button>
             </div>
           )}
         </div>
