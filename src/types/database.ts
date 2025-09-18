@@ -25,7 +25,7 @@ export interface Team {
   discord_guild_id?: string;
   discord_channel_id?: string;
   discord_bot_token_encrypted?: string;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -36,11 +36,25 @@ export interface TeamMember {
   team_id: string;
   user_id: string;
   role: 'admin' | 'member' | 'viewer';
-  permissions: Record<string, any>;
+  permissions: Record<string, unknown>;
   is_active: boolean;
   invited_by?: string;
   invited_at: string;
   joined_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamInvitation {
+  id: string;
+  team_id: string;
+  email: string;
+  role: 'admin' | 'member' | 'viewer';
+  message?: string;
+  invited_by: string;
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'expired';
+  expires_at: string;
+  accepted_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -53,7 +67,7 @@ export interface Project {
   color: string;
   icon?: string;
   is_active: boolean;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -74,7 +88,7 @@ export interface Task {
   estimated_hours?: number;
   actual_hours?: number;
   position: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -117,8 +131,8 @@ export interface TaskHistory {
   user_id: string;
   action: string;
   field_name?: string;
-  old_value?: any;
-  new_value?: any;
+  old_value?: unknown;
+  new_value?: unknown;
   comment?: string;
   created_at: string;
 }
@@ -129,7 +143,7 @@ export interface Notification {
   type: string;
   title: string;
   content?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   is_read: boolean;
   read_at?: string;
   expires_at?: string;
