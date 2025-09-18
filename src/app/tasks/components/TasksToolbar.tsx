@@ -15,9 +15,7 @@ import {
   AlertTriangle,
   Clock,
   Zap,
-  Settings,
-  Save,
-  Bookmark
+  Plus
 } from "lucide-react";
 
 interface TasksToolbarProps {
@@ -34,6 +32,9 @@ interface TasksToolbarProps {
   priorityFilter: "high" | "medium" | "low" | null;
   setPriorityFilter: (v: "high" | "medium" | "low" | null) => void;
   onClearQuickFilters: () => void;
+  teamMembers?: Array<{ id: string; name: string; email: string; }>;
+  onCreateTask?: () => void;
+  isLoading?: boolean;
 }
 
 export function TasksToolbar({
@@ -50,9 +51,11 @@ export function TasksToolbar({
   priorityFilter,
   setPriorityFilter,
   onClearQuickFilters,
+  teamMembers = [], // eslint-disable-line @typescript-eslint/no-unused-vars
+  onCreateTask,
+  isLoading = false,
 }: TasksToolbarProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const [savedFilters, setSavedFilters] = useState<string[]>([]);
   
   const hasQuickFilters = Boolean(assigneeFilter || dueFilter || priorityFilter);
   const activeFiltersCount = [assigneeFilter, dueFilter, priorityFilter].filter(Boolean).length;
@@ -118,7 +121,7 @@ export function TasksToolbar({
               placeholder="업무, 담당자, 태그로 검색..."
               value={searchTerm}
               onChange={(e) => onChangeSearch(e.target.value)}
-              className="pl-10 pr-20 h-10 border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-800 rounded-lg"
+              className="pl-10 pr-20 h-10 border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-800 rounded-lg shadow-none"
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
               {searchTerm && (
@@ -150,7 +153,7 @@ export function TasksToolbar({
                   variant={filter.active ? "default" : "outline"}
                   size="sm"
                   onClick={filter.onClick}
-                  className={`h-8 px-3 border-gray-300 dark:border-gray-600 ${
+                  className={`h-8 px-3 border-gray-200 dark:border-gray-700 shadow-none ${
                     filter.active 
                       ? `bg-${filter.color}-500 hover:bg-${filter.color}-600 text-white border-${filter.color}-500` 
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -168,7 +171,7 @@ export function TasksToolbar({
             variant="outline"
             size="sm"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className="h-8 border-gray-300 dark:border-gray-600"
+            className="h-8 border-gray-200 dark:border-gray-700 shadow-none"
           >
             <Filter className="h-4 w-4 mr-1.5" />
             필터
@@ -184,7 +187,7 @@ export function TasksToolbar({
             variant={showCompleted ? "default" : "outline"}
             size="sm"
             onClick={onToggleCompleted}
-            className="h-8 border-gray-300 dark:border-gray-600"
+            className="h-8 border-gray-200 dark:border-gray-700 shadow-none"
           >
             <Eye className="h-4 w-4 mr-1.5" />
             완료
@@ -195,11 +198,34 @@ export function TasksToolbar({
             variant="outline"
             size="sm"
             onClick={onRefresh}
-            className="h-8 border-gray-300 dark:border-gray-600"
+            className="h-8 border-gray-200 dark:border-gray-700 shadow-none"
           >
             <RefreshCw className={`h-4 w-4 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             새로고침
           </Button>
+
+          {/* 새 업무 */}
+          {onCreateTask && (
+            isLoading ? (
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 h-8"
+                disabled
+              >
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                로딩 중...
+              </Button>
+            ) : (
+              <Button 
+                size="sm" 
+                className="bg-blue-600 hover:bg-blue-700 h-8"
+                onClick={onCreateTask}
+              >
+                <Plus className="h-4 w-4 mr-1.5" />
+                새 업무
+              </Button>
+            )
+          )}
 
           {/* 필터 초기화 */}
           {hasQuickFilters && (
@@ -217,20 +243,22 @@ export function TasksToolbar({
       </div>
 
       {/* 고급 필터 패널 */}
-      {showAdvancedFilters && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+        showAdvancedFilters 
+          ? 'max-h-96 opacity-100' 
+          : 'max-h-0 opacity-0'
+      }`}>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mt-3">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">고급 필터</h3>
-            <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="h-7 text-xs">
-                <Save className="h-3 w-3 mr-1" />
-                저장
-              </Button>
-              <Button variant="ghost" size="sm" className="h-7 text-xs">
-                <Bookmark className="h-3 w-3 mr-1" />
-                프리셋
-              </Button>
-            </div>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">필터 옵션</h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowAdvancedFilters(false)}
+              className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-3 w-3" />
+            </Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -333,7 +361,7 @@ export function TasksToolbar({
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* 모바일용 빠른 필터 */}
       <div className="lg:hidden">
@@ -346,10 +374,10 @@ export function TasksToolbar({
                 variant={filter.active ? "default" : "outline"}
                 size="sm"
                 onClick={filter.onClick}
-                className={`h-8 px-3 whitespace-nowrap ${
+                className={`h-8 px-3 whitespace-nowrap shadow-none ${
                   filter.active 
                     ? `bg-${filter.color}-500 hover:bg-${filter.color}-600 text-white border-${filter.color}-500` 
-                    : 'border-gray-300 dark:border-gray-600'
+                    : 'border-gray-200 dark:border-gray-700'
                 }`}
               >
                 <Icon className="h-3 w-3 mr-1.5" />

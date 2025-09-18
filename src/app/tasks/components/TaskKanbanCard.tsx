@@ -1,208 +1,253 @@
 "use client";
 
-import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
-  Calendar, 
-  MessageSquare, 
-  MoreHorizontal, 
-  Paperclip, 
-  Clock, 
-  User, 
-  Flag,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Trash2, RefreshCw, Link, Copy } from "lucide-react";
 import React from "react";
+import { TaskStatus } from "@/types";
+
+interface TaskData {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  assignee: {
+    id: string;
+    name: string;
+    avatar: string;
+    email: string;
+  };
+  creator: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+  dueDate: string;
+  createdAt: string;
+  updatedAt: string;
+  progress: number;
+  tags: string[];
+  comments: number;
+  attachments: number;
+  storyPoints: number;
+  epic: string;
+  sprint: string;
+  labels: string[];
+}
 
 interface Props {
-  task: any;
+  task: TaskData;
   getTagColor: (tag: string) => string;
   onToggleTag: (tag: string) => void;
-  getStatusColor: (status: string) => string;
-  getStatusText: (status: string) => string;
   getPriorityColor: (p: string) => string;
   getPriorityIcon: (p: string) => React.ReactNode;
-  onTaskClick: (task: any) => void;
+  onTaskClick: (task: TaskData) => void;
+  onTaskDelete?: (taskId: string) => Promise<void>;
+  onTaskStatusUpdate?: (taskId: string, status: TaskStatus) => Promise<void>;
+  teamId?: string;
 }
 
 export function TaskKanbanCard({ 
   task, 
   getTagColor, 
   onToggleTag, 
-  getStatusColor, 
-  getStatusText, 
   getPriorityColor, 
   getPriorityIcon,
-  onTaskClick
+  onTaskClick,
+  onTaskDelete,
+  onTaskStatusUpdate,
+  teamId
 }: Props) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== "completed";
-  const isDueToday = new Date(task.dueDate).toDateString() === new Date().toDateString();
-  const isDueThisWeek = (() => {
-    const dueDate = new Date(task.dueDate);
-    const today = new Date();
-    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    return dueDate >= today && dueDate <= weekFromNow;
-  })();
-
-  const getDueDateColor = () => {
-    if (isOverdue) return "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30";
-    if (isDueToday) return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30";
-    if (isDueThisWeek) return "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30";
-    return "text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700";
+  // 프로젝트 번호 추출 (ID의 마지막 6자리 사용)
+  const getProjectNumber = (id: string) => {
+    return id.slice(-6).toUpperCase();
   };
 
-  const formatDueDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const diffTime = date.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "오늘";
-    if (diffDays === 1) return "내일";
-    if (diffDays === -1) return "어제";
-    if (diffDays > 0) return `${diffDays}일 후`;
-    return `${Math.abs(diffDays)}일 전`;
+  // 상태 변경 핸들러 - API 호출만 수행
+  const handleStatusChange = async (newStatus: TaskStatus) => {
+    if (onTaskStatusUpdate && teamId) {
+      try {
+        await onTaskStatusUpdate(task.id, newStatus);
+      } catch (error) {
+        console.error('상태 변경 실패:', error);
+      }
+    }
+  };
+
+  // 업무 삭제 핸들러
+  const handleDelete = async () => {
+    if (onTaskDelete && teamId) {
+      if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
+        try {
+          await onTaskDelete(task.id);
+        } catch (error) {
+          console.error('업무 삭제 실패:', error);
+        }
+      }
+    }
+  };
+
+  // 링크 복사 핸들러
+  const handleCopyLink = async () => {
+    try {
+      const taskUrl = `${window.location.origin}/tasks?id=${task.id}`;
+      await navigator.clipboard.writeText(taskUrl);
+      // TODO: 토스트 알림 추가
+      console.log('링크가 클립보드에 복사되었습니다');
+    } catch (error) {
+      console.error('링크 복사 실패:', error);
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "pending": return "대기";
+      case "in_progress": return "진행중";
+      case "completed": return "완료";
+      case "cancelled": return "취소";
+      case "on_hold": return "보류";
+      default: return status;
+    }
   };
 
   return (
-    <div className="group bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 mb-3 cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200"
-      onClick={() => onTaskClick(task)}
+    <div 
+      className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200"
+      onClick={(e) => {
+        // 드롭다운 메뉴가 클릭된 경우 이벤트 전파 중단
+        if ((e.target as HTMLElement).closest('[role="menuitem"]') || 
+            (e.target as HTMLElement).closest('button')) {
+          return;
+        }
+        onTaskClick(task);
+      }}
     >
-      {/* 헤더 섹션 */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-start space-x-2 flex-1">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className={`inline-flex items-center justify-center ${getPriorityColor(task.priority)}`} title={`우선순위: ${getPriorityText(task.priority)}`}>
-                <span className="[&>*]:h-3 [&>*]:w-3">
-                  {getPriorityIcon(task.priority)}
-                </span>
-              </span>
-              <h4 className="font-semibold text-gray-900 dark:text-white text-sm leading-5 line-clamp-2 mb-0">
-                {task.title}
-              </h4>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-              {task.description}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-1 ml-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+      {/* 더보기 버튼 - 호버 시에만 표시 */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={(e) => e.stopPropagation()}
           >
-            {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            <MoreHorizontal className="h-4 w-4 text-gray-500" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            <MoreHorizontal className="h-3 w-3" />
-          </Button>
-        </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel>업무 관리</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          
+          {/* 상태 변경 */}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              상태 변경
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleStatusChange('pending');
+              }}>
+                <div className="w-2 h-2 bg-gray-500 rounded-full mr-2" />
+                대기
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleStatusChange('in_progress');
+              }}>
+                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2" />
+                진행중
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleStatusChange('completed');
+              }}>
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                완료
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+
+          {/* 링크 복사 */}
+          <DropdownMenuItem onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleCopyLink();
+          }}>
+            <Link className="mr-2 h-4 w-4" />
+            링크 복사
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          {/* 삭제 */}
+          <DropdownMenuItem 
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDelete();
+            }}
+            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            제거
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Task 제목 */}
+      <div className="pr-8 mb-8">
+        <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm leading-relaxed line-clamp-3">
+          {task.title}
+        </h4>
       </div>
 
-
-      {/* 태그 섹션 */}
-      {task.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-3">
-          {task.tags.slice(0, isExpanded ? task.tags.length : 3).map((tag: string, index: number) => (
-            <span 
-              key={index} 
-              className={`px-2 py-1 text-xs rounded-full font-medium border cursor-pointer hover:scale-105 transition-transform ${getTagColor(tag)}`}
-              onClick={(e) => { e.stopPropagation(); onToggleTag(tag); }}
-            >
-              {tag}
+      {/* 하단 정보 */}
+      <div className="flex items-center justify-between">
+        {/* 좌측 - 프로젝트 번호 */}
+        <div className="flex items-center">
+          <div className="flex items-center space-x-1">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+              {getProjectNumber(task.id)}
             </span>
-          ))}
-          {!isExpanded && task.tags.length > 3 && (
-            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded-full text-gray-700 dark:text-gray-300 font-medium border border-gray-200 dark:border-gray-600">
-              +{task.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* 확장된 정보 */}
-      {isExpanded && (
-        <div className="mb-3 space-y-2 border-t border-gray-100 dark:border-gray-700 pt-3">
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center space-x-1">
-              <Flag className="h-3 w-3 text-gray-400" />
-              <span className="text-gray-500 dark:text-gray-400">스토리 포인트:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">{task.storyPoints}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <User className="h-3 w-3 text-gray-400" />
-              <span className="text-gray-500 dark:text-gray-400">생성자:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">{task.creator.name}</span>
-            </div>
           </div>
-          {task.epic && (
-            <div className="flex items-center space-x-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400">에픽:</span>
-              <Badge variant="outline" className="text-xs px-2 py-0.5">
-                {task.epic}
-              </Badge>
-            </div>
-          )}
-          {task.sprint && (
-            <div className="flex items-center space-x-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400">스프린트:</span>
-              <Badge variant="outline" className="text-xs px-2 py-0.5">
-                {task.sprint}
-              </Badge>
-            </div>
-          )}
         </div>
-      )}
 
-      {/* 하단 정보 바 */}
-      <div className="flex items-center justify-between text-xs">
-        <div className="flex items-center space-x-2">
-          <Avatar className="h-5 w-5">
-            <AvatarImage src={task.assignee.avatar} />
-            <AvatarFallback className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {task.assignee.name[0]}
-            </AvatarFallback>
-          </Avatar>
-          <span className="font-medium text-gray-700 dark:text-gray-300">{task.assignee.name}</span>
-        </div>
-        <div className="flex items-center space-x-1.5">
-          {task.comments > 0 && (
-            <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-md">
-              <MessageSquare className="h-3 w-3" />
-              <span className="font-medium">{task.comments}</span>
+        {/* 우측 - 사용자 프로필 */}
+        <div className="flex items-center">
+          {task.assignee ? (
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={task.assignee.avatar} />
+              <AvatarFallback className="text-xs bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                {task.assignee.name?.[0] || task.assignee.email?.[0] || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <div className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <span className="text-xs text-gray-400">?</span>
             </div>
           )}
-          {task.attachments > 0 && (
-            <div className="flex items-center space-x-1 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-md">
-              <Paperclip className="h-3 w-3" />
-              <span className="font-medium">{task.attachments}</span>
-            </div>
-          )}
-          <div className={`flex items-center space-x-1 px-1.5 py-0.5 rounded-md ${getDueDateColor()}`}>
-            <Calendar className="h-3 w-3" />
-            <span className="font-medium">{formatDueDate(task.dueDate)}</span>
-          </div>
         </div>
       </div>
     </div>
   );
-}
-
-function getPriorityText(priority: string) {
-  switch (priority) {
-    case "high": return "높음";
-    case "medium": return "보통";
-    case "low": return "낮음";
-    default: return priority;
-  }
 }
 
 

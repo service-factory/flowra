@@ -9,49 +9,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   X, 
-  Calendar, 
-  MessageSquare, 
-  Paperclip, 
   Edit3, 
-  Save, 
   Trash2, 
-  Clock,
   AlertTriangle,
   Circle,
   Square,
   Triangle,
   Plus,
 } from "lucide-react";
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  assignee: {
-    id: string;
-    name: string;
-    avatar: string;
-    email: string;
-  };
-  creator: {
-    id: string;
-    name: string;
-    avatar: string;
-  };
-  dueDate: string;
-  createdAt: string;
-  updatedAt: string;
-  progress: number;
-  tags: string[];
-  comments: number;
-  attachments: number;
-  storyPoints: number;
-  epic: string;
-  sprint: string;
-  labels: string[];
-}
+import { Task, TaskTag, TaskStatus, TaskPriority } from "@/types";
 
 interface TaskDetailDrawerProps {
   task: Task | null;
@@ -62,7 +28,7 @@ interface TaskDetailDrawerProps {
   teamMembers: Array<{
     id: string;
     name: string;
-    avatar: string;
+    avatar_url?: string;
     email: string;
   }>;
 }
@@ -81,133 +47,189 @@ export function TaskDetailDrawer({
   const [showAddTag, setShowAddTag] = useState(false);
 
   useEffect(() => {
-    console.log('TaskDetailDrawer - isOpen:', isOpen, 'task:', task);
     if (task) {
-      setEditedTask({ ...task });
+      // tags 배열이 없으면 빈 배열로 초기화
+      const taskWithTags = {
+        ...task,
+        tags: task.tags || []
+      };
+      setEditedTask(taskWithTags);
       setIsEditing(false);
     }
   }, [task, isOpen]);
 
-  console.log('TaskDetailDrawer render - task:', task, 'isOpen:', isOpen, 'editedTask:', editedTask);
-  
-  // 임시로 항상 렌더링하도록 수정
-  if (!task) {
-    console.log('TaskDetailDrawer returning null - no task');
+  if (!task || !editedTask) {
     return null;
   }
   
-  // editedTask가 없으면 task로 초기화
-  if (!editedTask) {
-    setEditedTask({ ...task });
-    return null;
-  }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/50";
-      case "in_progress": return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/50";
-      case "pending": return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800/50";
-      case "overdue": return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-800/50";
-      default: return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800/50";
+  // 상태 관련 헬퍼 함수들
+  const getStatusConfig = (status: string) => {
+    const configs = {
+      completed: {
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/50",
+        text: "완료",
+        icon: "✓"
+      },
+      in_progress: {
+        color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/50",
+        text: "진행중",
+        icon: "⏳"
+      },
+      pending: {
+        color: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/30 dark:text-slate-300 dark:border-slate-800/50",
+        text: "대기",
+        icon: "⏸"
+      },
+      cancelled: {
+        color: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800/50",
+        text: "취소",
+        icon: "✕"
+      },
+      on_hold: {
+        color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/50",
+        text: "보류",
+        icon: "⏸"
+      }
+    };
+    return configs[status as keyof typeof configs] || configs.pending;
+  };
+
+  const getPriorityConfig = (priority: string) => {
+    const configs = {
+      urgent: {
+        color: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20",
+        text: "긴급",
+        icon: <AlertTriangle className="h-4 w-4 fill-current" />
+      },
+      high: {
+        color: "text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20",
+        text: "높음",
+        icon: <Triangle className="h-4 w-4 fill-current" />
+      },
+      medium: {
+        color: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20",
+        text: "보통",
+        icon: <Square className="h-4 w-4 fill-current" />
+      },
+      low: {
+        color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20",
+        text: "낮음",
+        icon: <Circle className="h-4 w-4 fill-current" />
+      }
+    };
+    return configs[priority as keyof typeof configs] || configs.medium;
+  };
+
+
+  // 날짜 포맷팅 함수 개선
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return '날짜 없음';
+    
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '유효하지 않은 날짜';
+      
+      return date.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return '유효하지 않은 날짜';
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "completed": return "완료";
-      case "in_progress": return "진행중";
-      case "pending": return "대기";
-      case "cancelled": return "취소";
-      case "on_hold": return "보류";
-      default: return status;
+  const getDateInputValue = (dateStr?: string | null) => {
+    if (!dateStr) return '';
+    
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return '';
+      
+      return date.toISOString().split('T')[0];
+    } catch {
+      return '';
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent": return "text-red-600 dark:text-red-400";
-      case "high": return "text-orange-600 dark:text-orange-400";
-      case "medium": return "text-amber-600 dark:text-amber-400";
-      case "low": return "text-emerald-600 dark:text-emerald-400";
-      default: return "text-slate-500 dark:text-slate-400";
+  // 날짜 상태 확인
+  const dueDateStatus = (() => {
+    if (!editedTask.due_date) return null;
+    
+    try {
+      const dueDate = new Date(editedTask.due_date);
+      const today = new Date();
+      const todayStr = today.toDateString();
+      
+      if (isNaN(dueDate.getTime())) return null;
+      
+      const isOverdue = dueDate < today && editedTask.status !== "completed";
+      const isDueToday = dueDate.toDateString() === todayStr;
+      
+      return { isOverdue, isDueToday, dueDate };
+    } catch {
+      return null;
     }
-  };
+  })();
 
-  const getPriorityText = (priority: string) => {
-    switch (priority) {
-      case "urgent": return "긴급";
-      case "high": return "높음";
-      case "medium": return "보통";
-      case "low": return "낮음";
-      default: return priority;
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case "urgent": return <AlertTriangle className="h-4 w-4 fill-current" />;
-      case "high": return <Triangle className="h-4 w-4 fill-current" />;
-      case "medium": return <Square className="h-4 w-4 fill-current" />;
-      case "low": return <Circle className="h-4 w-4 fill-current" />;
-      default: return <Circle className="h-4 w-4 fill-current" />;
-    }
-  };
-
-  const getTagColor = (tag: string) => {
-    const colors = [
-      "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800/50",
-      "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/50",
-      "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-800/50",
-      "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/50",
-      "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/50",
-      "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800/50",
-      "bg-cyan-100 text-cyan-700 border-cyan-200 dark:bg-cyan-950/30 dark:text-cyan-300 dark:border-cyan-800/50",
-      "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-300 dark:border-orange-800/50"
-    ];
-    const index = tag.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const isOverdue = new Date(editedTask.dueDate) < new Date() && editedTask.status !== "completed";
-  const isDueToday = new Date(editedTask.dueDate).toDateString() === new Date().toDateString();
-
+  // 이벤트 핸들러들
   const handleSave = () => {
     const updatedTask = {
       ...editedTask,
-      updatedAt: new Date().toISOString().split('T')[0]
+      updated_at: new Date().toISOString()
     };
     onUpdate(updatedTask);
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditedTask({ ...task });
+    if (task) {
+      const taskWithTags = {
+        ...task,
+        tags: task.tags || []
+      };
+      setEditedTask(taskWithTags);
+    }
     setIsEditing(false);
   };
 
   const handleAddTag = () => {
-    if (newTag.trim() && !editedTask.tags.includes(newTag.trim())) {
+    if (newTag.trim()) {
+      const existingTags = editedTask.tags || [];
+      const tagExists = existingTags.some(tag => 
+        (typeof tag === 'string' ? tag : tag.tag) === newTag.trim()
+      );
+      
+      if (!tagExists) {
+        const newTagObject: TaskTag = {
+          id: `temp-${Date.now()}`,
+          task_id: editedTask.id,
+          tag: newTag.trim(),
+          color: '#3B82F6',
+          created_at: new Date().toISOString()
+        };
+        
       setEditedTask({
         ...editedTask,
-        tags: [...editedTask.tags, newTag.trim()]
+          tags: [...existingTags, newTagObject]
       });
+      }
+      
       setNewTag("");
       setShowAddTag(false);
     }
   };
 
-  const handleRemoveTag = (tagToRemove: string) => {
+  const handleRemoveTag = (tagToRemove: TaskTag | string) => {
+    const tagName = typeof tagToRemove === 'string' ? tagToRemove : tagToRemove.tag;
+    const existingTags = editedTask.tags || [];
+    
     setEditedTask({
       ...editedTask,
-      tags: editedTask.tags.filter(tag => tag !== tagToRemove)
+      tags: existingTags.filter(tag => 
+        (typeof tag === 'string' ? tag : tag.tag) !== tagName
+      )
     });
   };
 
@@ -217,6 +239,34 @@ export function TaskDetailDrawer({
       onClose();
     }
   };
+
+  // 담당자 변경 핸들러
+  const handleAssigneeChange = (userId: string) => {
+    const newAssignee = teamMembers.find(member => member.id === userId);
+    if (newAssignee) {
+      setEditedTask({ 
+        ...editedTask, 
+        assignee_id: userId,
+        assignee: {
+          id: newAssignee.id,
+          name: newAssignee.name,
+          email: newAssignee.email,
+          avatar_url: newAssignee.avatar_url,
+          provider: 'unknown',
+          provider_id: '',
+          discord_id: undefined,
+          timezone: 'Asia/Seoul',
+          email_verified: true,
+          is_active: true,
+          created_at: '',
+          updated_at: ''
+        }
+      });
+    }
+  };
+
+  const statusConfig = getStatusConfig(editedTask.status);
+  const priorityConfig = getPriorityConfig(editedTask.priority);
 
   return (
     <>
@@ -229,42 +279,59 @@ export function TaskDetailDrawer({
       )}
       
       {/* Drawer */}
-      <div className={`fixed right-0 top-0 h-full w-full max-w-2xl bg-white dark:bg-gray-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
+      <div className={`fixed right-0 top-0 h-full w-full max-w-3xl bg-white dark:bg-gray-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <span className={`inline-flex items-center justify-center ${getPriorityColor(editedTask.priority)}`}>
-                  {getPriorityIcon(editedTask.priority)}
-                </span>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  {isEditing ? "업무 수정" : "업무 상세"}
-                </h2>
+          {/* Simple Header */}
+          <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <div className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0 mr-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Badge variant="outline" className="text-xs">
+                      {editedTask.id.slice(-6)}
+                    </Badge>
+                    <Badge className={`${statusConfig.color} text-xs`}>
+                      {statusConfig.text}
+                    </Badge>
+                    <div className={`flex items-center space-x-1 text-xs ${priorityConfig.color.replace('bg-', 'text-').split(' ')[0]}`}>
+                      {priorityConfig.icon}
+                      <span>{priorityConfig.text}</span>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+                  
+                  {isEditing ? (
+                    <Input
+                      value={editedTask.title}
+                      onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                      className="text-lg font-semibold border-0 p-0 h-auto focus-visible:ring-0"
+                      placeholder="업무 제목을 입력하세요"
+                    />
+                  ) : (
+                    <h1 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                      {editedTask.title}
+                    </h1>
+                  )}
+                </div>
+                
+                <div className="flex items-center space-x-1">
               {isEditing ? (
                 <>
-                  <Button variant="outline" size="sm" onClick={handleCancel}>
+                      <Button variant="ghost" size="sm" onClick={handleCancel}>
                     취소
                   </Button>
                   <Button size="sm" onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
                     저장
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    수정
+                      <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                        <Edit3 className="h-4 w-4" />
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    삭제
+                      <Button variant="ghost" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
                   </Button>
                 </>
               )}
@@ -273,54 +340,37 @@ export function TaskDetailDrawer({
               </Button>
             </div>
           </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                제목
-              </label>
-              {isEditing ? (
-                <Input
-                  value={editedTask.title}
-                  onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
-                  className="text-lg font-semibold"
-                />
-              ) : (
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {editedTask.title}
-                </h1>
-              )}
+            </div>
             </div>
 
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 space-y-6">
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                설명
-              </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">설명</label>
               {isEditing ? (
                 <Textarea
-                  value={editedTask.description}
+                    value={editedTask.description || ''}
                   onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
-                  rows={4}
-                  className="resize-none"
+                    rows={3}
+                    className="w-full"
+                    placeholder="업무에 대한 설명을 입력하세요..."
                 />
               ) : (
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {editedTask.description}
-                </p>
+                  <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-md p-3 min-h-[60px]">
+                    {editedTask.description || '설명이 없습니다.'}
+                  </div>
               )}
             </div>
 
-            {/* Status and Priority */}
-            <div className="grid grid-cols-2 gap-4">
+              {/* Form Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  상태
-                </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">상태</label>
                 {isEditing ? (
-                  <Select value={editedTask.status} onValueChange={(value) => setEditedTask({ ...editedTask, status: value })}>
+                    <Select value={editedTask.status} onValueChange={(value) => setEditedTask({ ...editedTask, status: value as TaskStatus })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -328,20 +378,22 @@ export function TaskDetailDrawer({
                       <SelectItem value="pending">대기</SelectItem>
                       <SelectItem value="in_progress">진행중</SelectItem>
                       <SelectItem value="completed">완료</SelectItem>
+                        <SelectItem value="cancelled">취소</SelectItem>
+                        <SelectItem value="on_hold">보류</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Badge className={`${getStatusColor(editedTask.status)} font-medium`}>
-                    {getStatusText(editedTask.status)}
-                  </Badge>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {statusConfig.text}
+                    </div>
                 )}
               </div>
+                
+                {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  우선순위
-                </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">우선순위</label>
                 {isEditing ? (
-                  <Select value={editedTask.priority} onValueChange={(value) => setEditedTask({ ...editedTask, priority: value })}>
+                    <Select value={editedTask.priority} onValueChange={(value) => setEditedTask({ ...editedTask, priority: value as TaskPriority })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -349,114 +401,95 @@ export function TaskDetailDrawer({
                       <SelectItem value="low">낮음</SelectItem>
                       <SelectItem value="medium">보통</SelectItem>
                       <SelectItem value="high">높음</SelectItem>
+                        <SelectItem value="urgent">긴급</SelectItem>
                     </SelectContent>
                   </Select>
                 ) : (
-                  <div className="flex items-center space-x-2">
-                    <span className={`${getPriorityColor(editedTask.priority)}`}>
-                      {getPriorityIcon(editedTask.priority)}
-                    </span>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {getPriorityText(editedTask.priority)}
-                    </span>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      {priorityConfig.text}
                   </div>
                 )}
-              </div>
             </div>
 
             {/* Assignee */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                담당자
-              </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">담당자</label>
               {isEditing ? (
-                <Select value={editedTask.assignee.id} onValueChange={(value) => {
-                  const newAssignee = teamMembers.find(member => member.id === value);
-                  if (newAssignee) {
-                    setEditedTask({ ...editedTask, assignee: newAssignee });
-                  }
-                }}>
+                    <Select 
+                      value={editedTask.assignee_id || ''} 
+                      onValueChange={handleAssigneeChange}
+                    >
                   <SelectTrigger>
-                    <SelectValue />
+                        <SelectValue placeholder="담당자 선택" />
                   </SelectTrigger>
                   <SelectContent>
                     {teamMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
-                        <div className="flex items-center space-x-2">
-                          <Avatar className="h-5 w-5">
-                            <AvatarImage src={member.avatar} />
-                            <AvatarFallback className="text-xs">{member.name[0]}</AvatarFallback>
-                          </Avatar>
-                          <span>{member.name}</span>
-                        </div>
+                            {member.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={editedTask.assignee.avatar} />
-                    <AvatarFallback>{editedTask.assignee.name[0]}</AvatarFallback>
+                    <div className="flex items-center space-x-2">
+                      {editedTask.assignee ? (
+                        <>
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={editedTask.assignee.avatar_url} />
+                            <AvatarFallback className="text-xs">{editedTask.assignee.name[0]}</AvatarFallback>
                   </Avatar>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{editedTask.assignee.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{editedTask.assignee.email}</p>
-                  </div>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{editedTask.assignee.name}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">미할당</span>
+                      )}
                 </div>
               )}
             </div>
 
             {/* Due Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                마감일
-              </label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">마감일</label>
               {isEditing ? (
                 <Input
                   type="date"
-                  value={editedTask.dueDate}
-                  onChange={(e) => setEditedTask({ ...editedTask, dueDate: e.target.value })}
+                      value={getDateInputValue(editedTask.due_date)}
+                      onChange={(e) => setEditedTask({ ...editedTask, due_date: e.target.value })}
                 />
               ) : (
-                <div className="flex items-center space-x-2">
-                  <Calendar className={`h-4 w-4 ${isOverdue ? 'text-red-500' : isDueToday ? 'text-amber-500' : 'text-gray-400'}`} />
-                  <span className={`font-medium ${isOverdue ? 'text-red-600 dark:text-red-400' : isDueToday ? 'text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-gray-300'}`}>
-                    {formatDate(editedTask.dueDate)}
-                  </span>
-                  {isOverdue && (
-                    <Badge variant="destructive" className="text-xs">
-                      지연됨
-                    </Badge>
-                  )}
-                  {isDueToday && (
-                    <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
-                      오늘 마감
-                    </Badge>
+                    <div className={`text-sm font-medium ${
+                      dueDateStatus?.isOverdue ? 'text-red-600 dark:text-red-400' : 
+                      dueDateStatus?.isDueToday ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'
+                    }`}>
+                      {formatDate(editedTask.due_date)}
+                      {dueDateStatus?.isOverdue && <span className="ml-2 text-xs text-red-600">(지연)</span>}
+                      {dueDateStatus?.isDueToday && <span className="ml-2 text-xs text-amber-600">(오늘)</span>}
+                    </div>
                   )}
                 </div>
-              )}
             </div>
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                태그
-              </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">태그</label>
               <div className="flex flex-wrap gap-2">
-                {editedTask.tags.map((tag, index) => (
-                  <Badge key={index} className={`${getTagColor(tag)} font-medium`}>
-                    {tag}
+                  {editedTask.tags?.map((tag, index) => {
+                    const tagName = typeof tag === 'string' ? tag : tag.tag;
+                    return (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {tagName}
                     {isEditing && (
                       <button
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 hover:text-red-600"
+                            className="ml-1 hover:text-red-600 transition-colors"
                       >
                         <X className="h-3 w-3" />
                       </button>
                     )}
                   </Badge>
-                ))}
+                    );
+                  })}
+                  
                 {isEditing && (
                   <>
                     {showAddTag ? (
@@ -464,15 +497,15 @@ export function TaskDetailDrawer({
                         <Input
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
-                          placeholder="태그 입력"
-                          className="h-6 text-xs w-20"
+                            placeholder="태그 이름"
+                            className="h-7 text-xs w-20"
                           onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
                           autoFocus
                         />
-                        <Button size="sm" variant="ghost" onClick={handleAddTag} className="h-6 w-6 p-0">
+                          <Button size="sm" variant="ghost" onClick={handleAddTag} className="h-7 w-7 p-0">
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setShowAddTag(false)} className="h-6 w-6 p-0">
+                          <Button size="sm" variant="ghost" onClick={() => setShowAddTag(false)} className="h-7 w-7 p-0">
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
@@ -481,92 +514,33 @@ export function TaskDetailDrawer({
                         size="sm"
                         variant="outline"
                         onClick={() => setShowAddTag(true)}
-                        className="h-6 text-xs"
+                          className="h-7 text-xs"
                       >
                         <Plus className="h-3 w-3 mr-1" />
-                        태그 추가
+                          추가
                       </Button>
                     )}
                   </>
                 )}
+                </div>
               </div>
             </div>
 
             {/* Additional Info */}
-            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  스토리 포인트
-                </label>
-                {isEditing ? (
-                  <Input
-                    type="number"
-                    value={editedTask.storyPoints}
-                    onChange={(e) => setEditedTask({ ...editedTask, storyPoints: parseInt(e.target.value) || 0 })}
-                    className="w-20"
-                  />
-                ) : (
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {editedTask.storyPoints}pt
-                  </span>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  생성자
-                </label>
-                <div className="flex items-center space-x-2">
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={editedTask.creator.avatar} />
+            <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <div>생성일: {formatDate(editedTask.created_at)}</div>
+                <div>수정일: {formatDate(editedTask.updated_at)}</div>
+                {editedTask.creator && (
+                  <div className="flex items-center space-x-1">
+                    <span>생성자:</span>
+                    <Avatar className="h-4 w-4">
+                      <AvatarImage src={editedTask.creator.avatar_url} />
                     <AvatarFallback className="text-xs">{editedTask.creator.name[0]}</AvatarFallback>
                   </Avatar>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{editedTask.creator.name}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Epic and Sprint */}
-            {(editedTask.epic || editedTask.sprint) && (
-              <div className="grid grid-cols-2 gap-4">
-                {editedTask.epic && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      에픽
-                    </label>
-                    <Badge variant="outline">{editedTask.epic}</Badge>
+                    <span>{editedTask.creator.name}</span>
                   </div>
                 )}
-                {editedTask.sprint && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      스프린트
-                    </label>
-                    <Badge variant="outline">{editedTask.sprint}</Badge>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Activity */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">활동</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>댓글 {editedTask.comments}개</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Paperclip className="h-4 w-4" />
-                  <span>첨부파일 {editedTask.attachments}개</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Clock className="h-4 w-4" />
-                  <span>생성일: {formatDate(editedTask.createdAt)}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Edit3 className="h-4 w-4" />
-                  <span>수정일: {formatDate(editedTask.updatedAt)}</span>
-                </div>
               </div>
             </div>
           </div>
