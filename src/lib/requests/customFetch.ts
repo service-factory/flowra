@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
 import { SESSION_TOKEN_KEY } from "../constants/common";
+import { supabase } from "../supabase/client";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
@@ -57,14 +57,114 @@ const handleMaintenanceMode = (response: Response): boolean => {
 };
 
 const createHeaders = async (options?: ApiRequestOptions): Promise<HeadersInit> => {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_TOKEN_KEY);
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token?.value}`,
-    ...options?.headers,
+  // Supabase 세션에서 토큰 가져오기
+  const getTokenFromSupabase = async (): Promise<string | null> => {
+    if (typeof window === 'undefined') return null;
+    
+    try {
+      // Supabase 세션에서 access_token 가져오기
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.warn('🔴 Supabase session error:', error);
+        return null;
+      }
+      
+      if (session?.access_token) {
+        console.log('✅ Supabase token found:', {
+          tokenLength: session.access_token.length,
+          tokenPreview: `${session.access_token.substring(0, 20)}...`,
+          expiresAt: session.expires_at,
+          user: session.user?.email
+        });
+        return session.access_token;
+      }
+      
+      console.warn('⚠️ No Supabase session found');
+      return null;
+    } catch (error) {
+      console.error('🔴 Error getting Supabase session:', error);
+      return null;
+    }
   };
+
+  // 백업: 기존 방식으로 토큰 찾기
+  const getTokenFromStorage = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    
+    // 1. 쿠키에서 토큰 찾기
+    const getCookieValue = (name: string): string | null => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        const cookieValue = parts.pop()?.split(';').shift();
+        return cookieValue ? decodeURIComponent(cookieValue) : null;
+      }
+      return null;
+    };
+
+    // 2. localStorage에서 토큰 찾기
+    const getLocalStorageToken = (): string | null => {
+      try {
+        return localStorage.getItem(SESSION_TOKEN_KEY);
+      } catch {
+        return null;
+      }
+    };
+
+    // 3. sessionStorage에서 토큰 찾기
+    const getSessionStorageToken = (): string | null => {
+      try {
+        return sessionStorage.getItem(SESSION_TOKEN_KEY);
+      } catch {
+        return null;
+      }
+    };
+
+    const cookieToken = getCookieValue(SESSION_TOKEN_KEY);
+    const localToken = getLocalStorageToken();
+    const sessionToken = getSessionStorageToken();
+    
+    // 토큰 우선순위: 쿠키 > localStorage > sessionStorage
+    const token = cookieToken || localToken || sessionToken;
+    
+    // 디버깅을 위한 로그
+    console.log('🔍 Storage Token Debug:', {
+      allCookies: document.cookie,
+      sessionTokenKey: SESSION_TOKEN_KEY,
+      cookieToken: cookieToken ? `${cookieToken.substring(0, 20)}...` : null,
+      localToken: localToken ? `${localToken.substring(0, 20)}...` : null,
+      sessionToken: sessionToken ? `${sessionToken.substring(0, 20)}...` : null,
+      finalToken: token ? `${token.substring(0, 20)}...` : null,
+      tokenLength: token?.length || 0
+    });
+    
+    return token;
+  };
+
+  // 1차: Supabase 세션에서 토큰 시도
+  let token = await getTokenFromSupabase();
+  
+  // 2차: 백업으로 Storage에서 토큰 시도
+  if (!token) {
+    token = getTokenFromStorage();
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options?.headers as Record<string, string>),
+  };
+
+  // 토큰이 있을 때만 Authorization 헤더 추가
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+    console.log('🔐 Authorization header added with token from:', 
+      token.length > 200 ? 'Supabase' : 'Storage');
+  } else {
+    console.warn('⚠️ No token found in any source');
+  }
+
+  return headers;
 };
 
 const buildQueryParams = (queryParam?: Record<string, unknown>): string => {
@@ -129,7 +229,21 @@ export class APIRequest {
     };
 
     try {
+      console.log('🚀 API Request:', {
+        url: fetchUrl,
+        method,
+        headers: fetchOptions.headers,
+        hasBody: !!fetchOptions.body
+      });
+
       const response = await fetch(fetchUrl, fetchOptions);
+      
+      console.log('📡 API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+
       if (!handleMaintenanceMode(response)) {
         return (await response.json()) as RES_DATA;
       }
@@ -139,14 +253,18 @@ export class APIRequest {
       return (await response.json()) as RES_DATA;
     } catch (error) {
       if (error instanceof StatusError) {
-        console.error("Fetch Error:", error);
+        console.error("🔴 API Error:", {
+          status: error.status,
+          message: error.message,
+          url: fetchUrl
+        });
         throw error;
       }
 
       // 여기에 서버에서 내려주는 커스텀 에러 처리 로직 추가
       // 에러를 어떤식으로 사용자에게 표시할지는 추가 논의 필요
 
-      console.error("Network or unknown error:", error);
+      console.error("🔴 Network or unknown error:", error);
       throw error;
     }
   };

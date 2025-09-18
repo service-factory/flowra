@@ -4,7 +4,7 @@ export interface User {
   email: string;
   name: string;
   avatar_url?: string;
-  provider: 'kakao' | 'google';
+  provider: 'kakao' | 'google' | 'unknown';
   provider_id: string;
   discord_id?: string;
   timezone: string;
@@ -24,7 +24,7 @@ export interface Team {
   owner_id: string;
   discord_guild_id?: string;
   discord_channel_id?: string;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -35,7 +35,7 @@ export interface TeamMember {
   team_id: string;
   user_id: string;
   role: 'admin' | 'member' | 'viewer';
-  permissions: Record<string, any>;
+  permissions: Record<string, unknown>;
   is_active: boolean;
   invited_by?: string;
   invited_at: string;
@@ -54,7 +54,7 @@ export interface Project {
   color: string;
   icon?: string;
   is_active: boolean;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -79,7 +79,7 @@ export interface Task {
   estimated_hours?: number;
   actual_hours?: number;
   position: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   assignee?: User;
@@ -115,8 +115,8 @@ export interface TaskHistory {
   user_id: string;
   action: string;
   field_name?: string;
-  old_value?: any;
-  new_value?: any;
+  old_value?: unknown;
+  new_value?: unknown;
   comment?: string;
   created_at: string;
   user?: User;
@@ -129,7 +129,7 @@ export interface Notification {
   type: string;
   title: string;
   content?: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   is_read: boolean;
   read_at?: string;
   expires_at?: string;
@@ -153,13 +153,13 @@ export interface File {
 }
 
 // API 응답 타입
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
 }
 
-export interface PaginationResponse<T = any> {
+export interface PaginationResponse<T = unknown> {
   data: T[];
   pagination: {
     page: number;
@@ -204,11 +204,11 @@ export type TeamRole = 'admin' | 'member' | 'viewer';
 // OAuth 관련 타입
 export interface OAuthCallbackResponse {
   user: User;
-  session: any;
+  session: unknown;
   accessToken: string;
   refreshToken: string;
   isNewUser: boolean;
-  provider: 'kakao' | 'google';
+  provider: 'kakao' | 'google' | 'unknown';
 }
 
 // 앱 상태 타입

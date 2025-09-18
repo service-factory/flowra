@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Logo } from '@/components/ui/logo';
 import { KakaoLogo } from '@/components/ui/kakao-logo';
 import { GoogleLogo } from '@/components/ui/google-logo';
@@ -23,10 +23,17 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     try {
       setIsLoading(true);
       setLoadingProvider(provider);
-      
-      // Supabase OAuth 대신 직접 OAuth URL로 리다이렉트
-      const redirectUrl = `${window.location.origin}/api/auth/${provider}`;
-      window.location.href = redirectUrl;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+      });
+
+      if (error) {
+        console.error(`${provider} login error:`, error);
+        alert(`${provider === 'kakao' ? '카카오' : '구글'} 로그인 중 오류가 발생했습니다.`);
+        setIsLoading(false);
+        setLoadingProvider(null);
+      }
     } catch (error) {
       console.error(`${provider} login error:`, error);
       alert(`${provider === 'kakao' ? '카카오' : '구글'} 로그인 중 오류가 발생했습니다.`);

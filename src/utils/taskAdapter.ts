@@ -44,7 +44,25 @@ export function adaptTaskForDrawer(task: TaskWithDetails) {
 }
 
 // 기존 Task 형식을 TaskWithDetails로 변환하는 어댑터 (역방향)
-export function adaptTaskFromDrawer(task: any): TaskWithDetails {
+export function adaptTaskFromDrawer(task: {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  assignee?: { id: string; name: string; email: string; avatar: string };
+  creator?: { id: string; name: string; avatar: string };
+  dueDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  progress?: number;
+  tags: string[];
+  comments: number;
+  attachments: number;
+  storyPoints: number;
+  epic: string;
+  sprint: string;
+}): TaskWithDetails {
   return {
     id: task.id,
     team_id: "team-1", // 기본값
