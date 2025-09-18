@@ -6,6 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/logo";
 import { LoginModal } from "@/components/login-modal";
+import { UserProfile } from "@/components/user-profile";
+import { TeamInviteModal } from "@/components/team-invite-modal";
+import { TeamCreateModal } from "@/components/team-create-modal";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   CheckCircle, 
   Users, 
@@ -23,6 +27,9 @@ import { useState, useEffect } from "react";
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isTeamInviteModalOpen, setIsTeamInviteModalOpen] = useState(false);
+  const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
+  const { isAuthenticated, user, isLoading, hasTeam, refreshTeamData } = useAuth();
 
   useEffect(() => {
     setIsVisible(true);
@@ -44,19 +51,46 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                className="text-gray-600 hover:text-gray-900"
-                onClick={() => setIsLoginModalOpen(true)}
-              >
-                로그인
-              </Button>
-              <Button 
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg"
-                onClick={() => setIsLoginModalOpen(true)}
-              >
-                무료로 시작하기
-              </Button>
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  <span className="text-gray-600">확인 중...</span>
+                </div>
+              ) : isAuthenticated ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-600">
+                    안녕하세요, <span className="font-semibold text-blue-600">{user?.name}</span>님!
+                  </span>
+                  {!hasTeam && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                      onClick={() => setIsTeamCreateModalOpen(true)}
+                    >
+                      <Users className="w-4 h-4 mr-1" />
+                      팀 만들기
+                    </Button>
+                  )}
+                  <UserProfile />
+                </div>
+              ) : (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    className="text-gray-600 hover:text-gray-900"
+                    onClick={() => setIsLoginModalOpen(true)}
+                  >
+                    로그인
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg"
+                    onClick={() => setIsLoginModalOpen(true)}
+                  >
+                    무료로 시작하기
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -90,19 +124,73 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                <Button 
-                  size="lg" 
-                  className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300"
-                  onClick={() => setIsLoginModalOpen(true)}
-                >
-                  <Zap className="w-5 h-5 mr-2" />
-                  지금 시작하기
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <Play className="w-5 h-5 mr-2" />
-                  데모 보기
-                </Button>
+                {isAuthenticated ? (
+                  hasTeam ? (
+                    <>
+                      <Link href="/dashboard">
+                        <Button 
+                          size="lg" 
+                          className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300"
+                        >
+                          <Zap className="w-5 h-5 mr-2" />
+                          대시보드로 이동
+                          <ArrowRight className="w-5 h-5 ml-2" />
+                        </Button>
+                      </Link>
+                      <Link href="/tasks">
+                        <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+                          <Target className="w-5 h-5 mr-2" />
+                          업무 관리
+                        </Button>
+                      </Link>
+                      <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <Play className="w-5 h-5 mr-2" />
+                        데모 보기
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button 
+                        size="lg" 
+                        className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300"
+                        onClick={() => setIsTeamCreateModalOpen(true)}
+                      >
+                        <Users className="w-5 h-5 mr-2" />
+                        팀 만들기
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="lg" 
+                        className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        onClick={() => setIsTeamInviteModalOpen(true)}
+                      >
+                        <Users className="w-5 h-5 mr-2" />
+                        팀에 참여하기
+                      </Button>
+                      <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <Play className="w-5 h-5 mr-2" />
+                        데모 보기
+                      </Button>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <Button 
+                      size="lg" 
+                      className="w-full sm:w-auto text-lg px-8 py-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300"
+                      onClick={() => setIsLoginModalOpen(true)}
+                    >
+                      <Zap className="w-5 h-5 mr-2" />
+                      지금 시작하기
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-2 hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <Play className="w-5 h-5 mr-2" />
+                      데모 보기
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -289,8 +377,8 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  "복잡한 도구들 때문에 시간을 많이 낭비했는데, Flowra는 정말 직관적이에요. 
-                  팀원들도 금방 적응했고 업무 효율이 확실히 좋아졌습니다."
+                  &ldquo;복잡한 도구들 때문에 시간을 많이 낭비했는데, Flowra는 정말 직관적이에요. 
+                  팀원들도 금방 적응했고 업무 효율이 확실히 좋아졌습니다.&rdquo;
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-3">
@@ -312,8 +400,8 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  "디스코드 연동이 정말 편해요! 채팅하면서 바로 업무를 생성하고 관리할 수 있어서 
-                  컨텍스트 스위칭이 줄어들었습니다."
+                  &ldquo;디스코드 연동이 정말 편해요! 채팅하면서 바로 업무를 생성하고 관리할 수 있어서 
+                  컨텍스트 스위칭이 줄어들었습니다.&rdquo;
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mr-3">
@@ -335,8 +423,8 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
-                  "사이드 프로젝트 팀 관리가 이렇게 쉬울 줄 몰랐어요. 
-                  마감일 놓치는 일도 없어지고 팀원들 간 소통도 훨씬 원활해졌습니다."
+                  &ldquo;사이드 프로젝트 팀 관리가 이렇게 쉬울 줄 몰랐어요. 
+                  마감일 놓치는 일도 없어지고 팀원들 간 소통도 훨씬 원활해졌습니다.&rdquo;
                 </p>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mr-3">
@@ -363,18 +451,67 @@ export default function Home() {
             복잡한 설정 없이, 몇 분 안에 팀의 업무 관리가 완전히 바뀝니다
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="w-full sm:w-auto text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 shadow-xl"
-              onClick={() => setIsLoginModalOpen(true)}
-            >
-              <Zap className="w-5 h-5 mr-2" />
-              무료로 시작하기
-            </Button>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-white text-white hover:bg-white/10">
-              <Users className="w-5 h-5 mr-2" />
-              팀 초대하기
-            </Button>
+            {isAuthenticated ? (
+              hasTeam ? (
+                <>
+                  <Link href="/dashboard">
+                    <Button 
+                      size="lg" 
+                      className="w-full sm:w-auto text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 shadow-xl"
+                    >
+                      <Zap className="w-5 h-5 mr-2" />
+                      대시보드로 이동
+                    </Button>
+                  </Link>
+                  <Link href="/team">
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 py-6 border-white text-white hover:bg-white/10">
+                      <Users className="w-5 h-5 mr-2" />
+                      팀 관리
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Button 
+                    size="lg" 
+                    className="w-full sm:w-auto text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 shadow-xl"
+                    onClick={() => setIsTeamCreateModalOpen(true)}
+                  >
+                    <Users className="w-5 h-5 mr-2" />
+                    팀 만들기
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="w-full sm:w-auto text-lg px-8 py-6 border-white text-white hover:bg-white/10"
+                    onClick={() => setIsTeamInviteModalOpen(true)}
+                  >
+                    <Users className="w-5 h-5 mr-2" />
+                    팀에 참여하기
+                  </Button>
+                </>
+              )
+            ) : (
+              <>
+                <Button 
+                  size="lg" 
+                  className="w-full sm:w-auto text-lg px-8 py-6 bg-white text-blue-600 hover:bg-gray-100 shadow-xl"
+                  onClick={() => setIsLoginModalOpen(true)}
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  무료로 시작하기
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="w-full sm:w-auto text-lg px-8 py-6 border-white text-white hover:bg-white/10"
+                  onClick={() => setIsTeamInviteModalOpen(true)}
+                >
+                  <Users className="w-5 h-5 mr-2" />
+                  팀 초대하기
+                </Button>
+              </>
+            )}
           </div>
           <p className="text-blue-100 text-sm mt-4">
             💳 신용카드 불필요 • ⚡ 30초 만에 시작 • 🔒 완전 무료
@@ -433,6 +570,29 @@ export default function Home() {
       <LoginModal 
         isOpen={isLoginModalOpen} 
         onClose={() => setIsLoginModalOpen(false)} 
+      />
+
+      {/* Team Invite Modal */}
+      <TeamInviteModal 
+        isOpen={isTeamInviteModalOpen} 
+        onClose={() => setIsTeamInviteModalOpen(false)}
+        onInvite={(invitations) => {
+          console.log('팀 초대:', invitations);
+          // TODO: 실제 API 호출 구현
+        }}
+      />
+
+      {/* Team Create Modal */}
+      <TeamCreateModal 
+        isOpen={isTeamCreateModalOpen} 
+        onClose={() => setIsTeamCreateModalOpen(false)}
+        onCreate={async (teamData) => {
+          console.log('팀 생성:', teamData);
+          // 팀 생성 성공 시 팀 정보 새로고침
+          await refreshTeamData();
+          // 대시보드로 이동
+          window.location.href = '/dashboard?teamId=0';
+        }}
       />
     </div>
   );

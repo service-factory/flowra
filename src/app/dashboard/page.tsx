@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Logo } from "@/components/ui/logo";
+import { LeftNavigationBar } from "@/components/left-navigation-bar";
+import TaskCreateModal from "@/components/task-create-modal";
+import { TeamCreateModal } from "@/components/team-create-modal";
+import { TeamGuard } from "@/components/team-guard";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Plus,
   Calendar,
@@ -16,8 +20,6 @@ import {
   Users,
   TrendingUp,
   Bell,
-  Settings,
-  Menu,
   Search,
   Filter,
   MoreHorizontal,
@@ -105,8 +107,23 @@ const mockRecentActivity = [
 ];
 
 export default function Dashboard() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedFilter] = useState("all");
+  const [isLnbCollapsed, setIsLnbCollapsed] = useState(true);
+  const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
+  
+  // 팀 데이터 가져오기
+  const { teamMemberships, currentTeam, refreshTeamData } = useAuth();
+  
+  // 팀 목록 생성 (팀 멤버십에서 팀 정보 추출)
+  const teams = teamMemberships.map(membership => ({
+    id: membership.team_id,
+    name: currentTeam?.name || '팀',
+    slug: currentTeam?.slug || 'team',
+    description: currentTeam?.description,
+    color: currentTeam?.settings?.color || 'blue',
+    icon: currentTeam?.settings?.icon || 'Building2',
+    is_active: currentTeam?.is_active || true
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -142,89 +159,48 @@ export default function Dashboard() {
     : mockTasks.filter(task => task.status === selectedFilter);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              <div className="flex items-center space-x-3">
-                <Logo size="md" variant="default" />
-                <div>
-                  <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Flowra</h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">대시보드</p>
-                </div>
-              </div>
+    <TeamGuard>
+      <div className="min-h-screen">
+      <LeftNavigationBar
+        title="Dashboard"
+        subtitle={currentTeam?.name || "Flowra Team"}
+        isCollapsed={isLnbCollapsed}
+        onToggleCollapse={() => setIsLnbCollapsed(!isLnbCollapsed)}
+        activePage="dashboard"
+        teams={teams}
+        currentTeam={currentTeam}
+        onTeamChange={(team) => {
+          // 팀 변경 로직 (나중에 구현)
+          console.log('팀 변경:', team);
+        }}
+        onCreateTeam={() => {
+          setIsTeamCreateModalOpen(true);
+        }}
+        rightActions={(
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="업무 검색..."
+                className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <input
-                  type="text"
-                  placeholder="업무 검색..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-              </Button>
-              
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/avatars/user.jpg" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
-          <div className="flex flex-col h-full">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">팀 프로젝트</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Flowra 개발팀</p>
-            </div>
+            <Button variant="ghost" size="sm" className="relative">
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
+            </Button>
             
-            <nav className="flex-1 px-4 space-y-2">
-              <Link href="/dashboard" className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg">
-                <Target className="h-4 w-4" />
-                <span>대시보드</span>
-              </Link>
-              <Link href="/tasks" className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <CheckCircle className="h-4 w-4" />
-                <span>업무 관리</span>
-              </Link>
-              <Link href="/calendar" className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <Calendar className="h-4 w-4" />
-                <span>캘린더</span>
-              </Link>
-              <Link href="/team" className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <Users className="h-4 w-4" />
-                <span>팀 관리</span>
-              </Link>
-              <Link href="/settings" className="flex items-center space-x-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                <Settings className="h-4 w-4" />
-                <span>설정</span>
-              </Link>
-            </nav>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="/avatars/user.jpg" />
+              <AvatarFallback>U</AvatarFallback>
+            </Avatar>
           </div>
-        </aside>
+        )}
+      />
 
-        {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
+      <div className="px-4 py-4 ml-16">
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -300,12 +276,7 @@ export default function Dashboard() {
                     <Filter className="h-4 w-4 mr-2" />
                     필터
                   </Button>
-                  <Link href="/tasks/create">
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      새 업무
-                    </Button>
-                  </Link>
+                  <TaskCreateModal onTaskCreate={() => {}} key="task-create-modal-in-dashboard" />
                 </div>
               </div>
 
@@ -421,12 +392,16 @@ export default function Dashboard() {
                   <CardTitle>빠른 작업</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <Link href="/tasks/create" className="block">
-                    <Button className="w-full justify-start" variant="outline">
-                      <Plus className="h-4 w-4 mr-2" />
-                      새 업무 생성
-                    </Button>
-                  </Link>
+                  <TaskCreateModal 
+                    key="task-create-modal-in-dashboard"
+                    onTaskCreate={() => {}}
+                    trigger={
+                      <Button className="w-full justify-start" variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        새 업무 생성
+                      </Button>
+                    }
+                  />
                   <Link href="/calendar" className="block">
                     <Button className="w-full justify-start" variant="outline">
                       <Calendar className="h-4 w-4 mr-2" />
@@ -443,16 +418,21 @@ export default function Dashboard() {
               </Card>
             </div>
           </div>
-        </main>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
+
+    {/* Team Create Modal */}
+    <TeamCreateModal 
+      isOpen={isTeamCreateModalOpen} 
+      onClose={() => setIsTeamCreateModalOpen(false)}
+        onCreate={async (teamData) => {
+          console.log('팀 생성:', teamData);
+          // 팀 생성 성공 시 팀 정보 새로고침
+          await refreshTeamData();
+          // tasks 페이지로 이동
+          window.location.href = '/tasks?teamId=0';
+        }}
+    />
+    </TeamGuard>
   );
 }
