@@ -71,12 +71,6 @@ const createHeaders = async (options?: ApiRequestOptions): Promise<HeadersInit> 
       }
       
       if (session?.access_token) {
-        console.log('✅ Supabase token found:', {
-          tokenLength: session.access_token.length,
-          tokenPreview: `${session.access_token.substring(0, 20)}...`,
-          expiresAt: session.expires_at,
-          user: session.user?.email
-        });
         return session.access_token;
       }
       
@@ -128,17 +122,6 @@ const createHeaders = async (options?: ApiRequestOptions): Promise<HeadersInit> 
     // 토큰 우선순위: 쿠키 > localStorage > sessionStorage
     const token = cookieToken || localToken || sessionToken;
     
-    // 디버깅을 위한 로그
-    console.log('🔍 Storage Token Debug:', {
-      allCookies: document.cookie,
-      sessionTokenKey: SESSION_TOKEN_KEY,
-      cookieToken: cookieToken ? `${cookieToken.substring(0, 20)}...` : null,
-      localToken: localToken ? `${localToken.substring(0, 20)}...` : null,
-      sessionToken: sessionToken ? `${sessionToken.substring(0, 20)}...` : null,
-      finalToken: token ? `${token.substring(0, 20)}...` : null,
-      tokenLength: token?.length || 0
-    });
-    
     return token;
   };
 
@@ -158,8 +141,6 @@ const createHeaders = async (options?: ApiRequestOptions): Promise<HeadersInit> 
   // 토큰이 있을 때만 Authorization 헤더 추가
   if (token) {
     headers.Authorization = `Bearer ${token}`;
-    console.log('🔐 Authorization header added with token from:', 
-      token.length > 200 ? 'Supabase' : 'Storage');
   } else {
     console.warn('⚠️ No token found in any source');
   }
@@ -229,20 +210,7 @@ export class APIRequest {
     };
 
     try {
-      console.log('🚀 API Request:', {
-        url: fetchUrl,
-        method,
-        headers: fetchOptions.headers,
-        hasBody: !!fetchOptions.body
-      });
-
       const response = await fetch(fetchUrl, fetchOptions);
-      
-      console.log('📡 API Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        url: response.url
-      });
 
       if (!handleMaintenanceMode(response)) {
         return (await response.json()) as RES_DATA;

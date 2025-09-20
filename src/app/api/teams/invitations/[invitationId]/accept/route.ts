@@ -16,9 +16,6 @@ export async function POST(
   const { invitationId } = resolvedParams;
   
   try {
-    console.log('🔍 팀 초대 수락 API 호출:', { url: request.url, method: request.method });
-    console.log('📋 파라미터:', resolvedParams);
-
     // 기본 인증 확인
     const authResult = await authenticate(request);
     if (!authResult.success) {
@@ -171,13 +168,6 @@ export async function POST(
       console.error('❌ 초대 상태 업데이트 실패:', updateError);
       // 이미 멤버는 추가되었으므로 로그만 남기고 성공 처리
     }
-
-    console.log('✅ 팀 초대 수락 성공:', {
-      userId: user.id,
-      teamId: invitation.team_id,
-      role: invitation.role,
-      memberId: newMember.id
-    });
 
     return createSuccessResponse({
       message: `${invitation.teams?.name || '알 수 없는 팀'} 팀에 성공적으로 참여했습니다`,

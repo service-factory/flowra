@@ -45,8 +45,6 @@ export function useTaskActions(
       throw new Error('팀 ID가 필요합니다');
     }
 
-    console.log('🔄 Status Update Start:', { taskId, status, teamId, tasksCount: currentTasks?.length });
-
     // 낙관적 업데이트
     let previousTasks: Task[] | null = null;
     if (currentTasks && onOptimisticUpdate) {
@@ -54,12 +52,6 @@ export function useTaskActions(
       const targetTask = currentTasks.find(task => task.id === taskId);
       
       if (targetTask) {
-        console.log('✨ Optimistic Update:', { 
-          taskTitle: targetTask.title, 
-          oldStatus: targetTask.status, 
-          newStatus: status 
-        });
-        
         const optimisticTasks = currentTasks.map(task => 
           task.id === taskId 
             ? { 
@@ -92,8 +84,6 @@ export function useTaskActions(
         }
         throw new Error(response.error || '상태 변경에 실패했습니다');
       }
-
-      console.log('✅ Status Update Success:', response.data);
       return response.data as Task;
     } catch (error) {
       console.error('❌ Status Update Error:', error);

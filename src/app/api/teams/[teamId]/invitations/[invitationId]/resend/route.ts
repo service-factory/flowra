@@ -10,9 +10,6 @@ export async function POST(
   const { teamId, invitationId } = resolvedParams;
   
   try {
-    console.log('🔍 초대 재전송 API 호출:', { url: request.url, method: request.method });
-    console.log('📋 파라미터:', resolvedParams);
-
     // 팀 인증 및 권한 확인 (멤버 관리 권한 필요)
     const authResult = await authenticateWithTeam(request, teamId, ['can_manage_members']);
     if (!authResult.success) {
@@ -92,12 +89,6 @@ export async function POST(
       console.error('❌ 이메일 재발송 실패:', emailResult.error);
       return createErrorResponse(`이메일 재발송 실패: ${emailResult.error}`, 500);
     }
-
-    console.log('✅ 초대 재발송 성공:', {
-      invitationId,
-      email: invitation.email,
-      messageId: emailResult.messageId
-    });
 
     return createSuccessResponse({
       message: '초대 이메일이 재발송되었습니다',

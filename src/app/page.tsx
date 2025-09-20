@@ -587,7 +587,6 @@ export default function Home() {
         isOpen={isTeamCreateModalOpen} 
         onClose={() => setIsTeamCreateModalOpen(false)}
         onCreate={async (teamData) => {
-          console.log('팀 생성:', teamData);
           // 팀 생성 성공 시 팀 정보 새로고침
           await refreshTeamData();
           // 대시보드로 이동

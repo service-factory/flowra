@@ -299,12 +299,6 @@ export function KanbanBoard({
 
         // 50% 이상 겹치는지 확인
         const overlapPercentage = intersectionArea / draggedArea;
-        console.log('🔍 Overlap Check:', { 
-          containerId: collision.id, 
-          overlapPercentage: (overlapPercentage * 100).toFixed(1) + '%',
-          threshold: '50%',
-          canDrop: overlapPercentage >= 0.5
-        });
 
         return overlapPercentage >= 0.5; // 50% 이상 겹치면 드롭 가능
       });
@@ -332,7 +326,6 @@ export function KanbanBoard({
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    console.log('🎯 Drag Start:', { activeId: active.id, activeData: active.data.current });
     
     if (active.data.current?.type === "task") {
       const task = active.data.current.task as Task;
@@ -340,33 +333,12 @@ export function KanbanBoard({
     }
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    
-    if (over && over.data.current?.type === "column") {
-      console.log('🔄 Drag Over Column:', { 
-        columnId: over.id, 
-        columnTitle: over.data.current.column?.title 
-      });
-    } else if (over) {
-      console.log('🔄 Drag Over Task:', { taskId: over.id });
-    }
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    console.log('🎯 Drag End:', { 
-      activeId: active.id, 
-      overId: over?.id, 
-      overData: over?.data.current 
-    });
     
     setActiveTask(null);
 
-    if (!over) {
-      console.log('❌ No drop target');
-      return;
-    }
+    if (!over) return;
 
     const taskId = active.id as string;
     let newStatus: string;
@@ -383,18 +355,14 @@ export function KanbanBoard({
 
     // 허용된 상태인지 확인
     if (!allowedStatuses.includes(newStatus)) {
-      console.warn('❌ 허용되지 않은 상태:', newStatus);
       return;
     }
 
     // 같은 칼럼 내에서의 이동인지 확인
     const currentTask = tasks.find((t) => t.id === taskId);
     if (currentTask && currentTask.status === newStatus) {
-      console.log('⏭️ 같은 칼럼 내 이동, 무시');
       return;
     }
-
-    console.log('✅ 상태 변경:', { taskId, oldStatus: currentTask?.status, newStatus });
 
     // 상태 업데이트 API 호출
     if (onTaskStatusUpdate) {
@@ -409,7 +377,6 @@ export function KanbanBoard({
       sensors={sensors}
       collisionDetection={customCollisionDetection}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={allTaskIds} strategy={verticalListSortingStrategy}>

@@ -11,9 +11,6 @@ export async function GET(
   const { invitationId } = resolvedParams;
   
   try {
-    console.log('🔍 팀 초대 정보 조회 API 호출:', { url: request.url, method: request.method });
-    console.log('📋 파라미터:', resolvedParams);
-
     const url = new URL(request.url);
     const email = url.searchParams.get('email');
 
@@ -65,13 +62,6 @@ export async function GET(
     } else if (isExpired) {
       currentStatus = 'expired';
     }
-
-    console.log('✅ 초대 정보 조회 성공:', {
-      invitationId,
-      email,
-      status: currentStatus,
-      teamName: invitation.teams?.name
-    });
 
     return createSuccessResponse({
       id: invitation.id,

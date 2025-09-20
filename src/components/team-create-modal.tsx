@@ -201,7 +201,6 @@ export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalPr
 
     setIsSubmitting(true);
     try {
-      console.log('팀 생성 시작');
       const teamData: TeamCreateData = {
         name: name.trim(),
         description: description.trim() || undefined,

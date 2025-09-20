@@ -42,12 +42,6 @@ export default function TasksPage() {
     return teamId;
   }, [teamId, currentTeam?.id]);
 
-  console.log('팀 ID 정보:', { 
-    urlTeamId: teamId, 
-    currentTeamId: currentTeam?.id, 
-    actualTeamId,
-    authLoading
-  });
   const { 
     data: teamData, 
     isLoading, 
@@ -121,7 +115,6 @@ export default function TasksPage() {
   const handleOptimisticTaskMove = async (taskId: string, newStatus: string) => {
     try {
       const serverTasks = teamData?.tasks || [];
-      console.log('🎯 DnD Task Move:', { taskId, newStatus, serverTasks: serverTasks.length });
       await updateTaskStatus(taskId, newStatus as TaskStatus, serverTasks);
       // Refetch to ensure consistency
       setTimeout(() => refetch(), 100);

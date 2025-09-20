@@ -25,25 +25,17 @@ export async function GET(
   const { teamId } = resolvedParams;
   
   try {
-    console.log('🔍 팀원 목록 API 호출:', { url: request.url, method: request.method });
-    console.log('📋 파라미터:', resolvedParams);
-    
-    // 팀 인증 및 권한 확인
-    console.log('🔐 팀 인증 시작:', teamId);
     const authResult = await authenticateWithTeam(request, teamId);
     if (!authResult.success) {
       console.error('❌ 팀 인증 실패:', authResult.error);
       return authResult.error!;
     }
-    console.log('✅ 팀 인증 성공');
 
     const { supabase } = authResult;
     if (!supabase) {
       return createErrorResponse('데이터베이스 연결 오류', 500);
     }
 
-    // 팀원 정보 조회 (사용자 정보와 조인)
-    console.log('📊 팀원 목록 조회 시작');
     const { data: members, error: membersError } = await supabase
       .from('team_members')
       .select(`
@@ -71,11 +63,9 @@ export async function GET(
       });
       return createErrorResponse('팀원 목록을 불러올 수 없습니다', 500);
     }
-    console.log('✅ 팀원 목록 조회 성공:', members?.length || 0, '명');
 
     // 팀원별 업무 통계 조회 (N+1 문제 해결을 위한 단일 쿼리)
     const memberIds = (members?.map(m => m.users?.id).filter(Boolean) || []) as string[];
-    console.log('📈 업무 통계 조회 시작:', memberIds.length, '명');
     const { data: taskStats, error: statsError } = await supabase
       .from('tasks')
       .select('assignee_id, status')
@@ -88,8 +78,6 @@ export async function GET(
         memberIds: memberIds.length,
         teamId
       });
-    } else {
-      console.log('✅ 업무 통계 조회 성공:', taskStats?.length || 0, '개');
     }
 
     // 팀원별 업무 통계 계산
@@ -104,7 +92,6 @@ export async function GET(
     }, {} as Record<string, { completed: number; current: number; overdue: number }>);
 
     // 대기 중인 초대 조회
-    console.log('📧 초대 목록 조회 시작');
     const { data: invitations, error: invitationsError } = await supabase
       .from('team_invitations')
       .select(`
@@ -127,12 +114,9 @@ export async function GET(
 
     if (invitationsError) {
       console.error('⚠️ 초대 목록 조회 실패:', invitationsError);
-    } else {
-      console.log('✅ 초대 목록 조회 성공:', invitations?.length || 0, '개');
     }
 
     // 데이터 구조 최적화
-    console.log('🔄 데이터 최적화 시작');
     const optimizedMembers = (members || [])
       .filter(member => member.users) // null 체크
       .map(member => ({
@@ -176,11 +160,6 @@ export async function GET(
       };
     });
 
-    console.log('✅ 데이터 최적화 완료:', {
-      members: optimizedMembers.length,
-      invitations: optimizedInvitations.length
-    });
-
     return createSuccessResponse({
       members: optimizedMembers,
       invitations: optimizedInvitations,
@@ -214,9 +193,6 @@ export async function POST(
   const { teamId } = resolvedParams;
   
   try {
-    console.log('🔍 팀원 초대 API 호출:', { url: request.url, method: request.method });
-    console.log('📋 파라미터:', resolvedParams);
-
     // 팀 인증 및 권한 확인 (멤버 관리 권한 필요)
     const authResult = await authenticateWithTeam(request, teamId, ['can_manage_members']);
     if (!authResult.success) {
@@ -380,12 +356,6 @@ export async function POST(
           continue;
         }
 
-        console.log('✅ 초대 성공:', {
-          email: invitation.email,
-          invitationId: newInvitation.id,
-          messageId: emailResult.messageId
-        });
-
         results.push({
           email: invitation.email,
           success: true,
@@ -405,12 +375,6 @@ export async function POST(
 
     const successCount = results.filter(r => r.success).length;
     const failCount = results.length - successCount;
-
-    console.log('📊 초대 결과 요약:', {
-      total: results.length,
-      success: successCount,
-      failed: failCount
-    });
 
     return createSuccessResponse({
       results,
@@ -441,9 +405,7 @@ export async function PUT(
   { params }: { params: Promise<{ teamId: string }> }
 ) {
   try {
-    console.log('🔍 팀원 역할 변경 API 호출:', { url: request.url, method: request.method });
     const resolvedParams = await params;
-    console.log('📋 파라미터:', resolvedParams);
     const { teamId } = resolvedParams;
     const url = new URL(request.url);
     const memberId = url.searchParams.get('memberId');
@@ -548,9 +510,7 @@ export async function DELETE(
   { params }: { params: Promise<{ teamId: string }> }
 ) {
   try {
-    console.log('🔍 팀원 제거/초대 취소 API 호출:', { url: request.url, method: request.method });
     const resolvedParams = await params;
-    console.log('📋 파라미터:', resolvedParams);
     const { teamId } = resolvedParams;
     const url = new URL(request.url);
     const memberId = url.searchParams.get('memberId');

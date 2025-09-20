@@ -75,20 +75,15 @@ export function useTeamMembers(teamId: string | null) {
         throw new Error('팀 ID가 필요합니다');
       }
 
-      console.log('팀원 데이터 요청:', teamId);
-      const response = await getFetch<undefined, TeamMembersData>({
+      const response = await getFetch<undefined, {success: boolean; data: TeamMembersData; error?: string}>({
         url: `/api/teams/${teamId}/members`
       });
       
-      console.log('🔍 팀원 데이터 응답:', response);
-      console.log('🔍 members 타입:', typeof response.members, 'length:', response.members?.length);
-      console.log('🔍 invitations 타입:', typeof response.invitations, 'length:', response.invitations?.length);
-      
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || '팀원 데이터를 불러올 수 없습니다');
       }
 
-      return response;
+      return response.data;
     },
     enabled: !!teamId && teamId !== 'null' && teamId !== 'undefined',
     staleTime: 1000 * 60 * 5, // 5분
@@ -203,26 +198,32 @@ export function useTeamMembers(teamId: string | null) {
     { 
       value: 'all', 
       label: '전체', 
-      count: teamMembersData.stats.totalMembers + teamMembersData.stats.pendingInvitations,
+      count: (teamMembersData.stats?.totalMembers || 0) + (teamMembersData.stats?.pendingInvitations || 0),
       color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300' 
     },
     { 
       value: 'admin', 
       label: '관리자', 
-      count: teamMembersData.stats.adminCount,
+      count: teamMembersData.stats?.adminCount || 0,
       color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' 
     },
     { 
       value: 'member', 
       label: '멤버', 
-      count: teamMembersData.stats.memberCount,
+      count: teamMembersData.stats?.memberCount || 0,
       color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
     },
     { 
       value: 'viewer', 
       label: '뷰어', 
-      count: teamMembersData.stats.viewerCount,
-      color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300' 
+      count: teamMembersData.stats?.viewerCount || 0,
+      color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
+    },
+    { 
+      value: 'pending', 
+      label: '대기중', 
+      count: teamMembersData.stats?.pendingInvitations || 0,
+      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' 
     },
   ] : [];
 

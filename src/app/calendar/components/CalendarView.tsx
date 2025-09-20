@@ -481,7 +481,6 @@ export function CalendarView({
                 <div
                   key={task.id}
                   onClick={(e) => {
-                    console.log('Day view task clicked:', task);
                     e.stopPropagation();
                     onTaskClick(task);
                   }}

@@ -91,15 +91,6 @@ export default function TeamPage() {
     return teamId;
   }, [teamId, currentTeam?.id]);
 
-  console.log('🏗️ 팀 페이지 상태:', { 
-    urlTeamId: teamId, 
-    currentTeamId: currentTeam?.id, 
-    actualTeamId,
-    authLoading,
-    teamMemberships: teamMemberships?.length || 0,
-    currentUser: user?.email
-  });
-
   // 팀원 관리 훅 사용
   const {
     teamMembersData,
@@ -320,20 +311,20 @@ export default function TeamPage() {
         <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400 mb-8">
           <div className="flex items-center space-x-2">
             <Users className="h-4 w-4" />
-                <span>총 {teamMembersData.stats.totalMembers}명</span>
+                <span>총 {teamMembersData?.stats?.totalMembers || 0}명</span>
           </div>
           <div className="flex items-center space-x-2">
             <Crown className="h-4 w-4" />
-                <span>관리자 {teamMembersData.stats.adminCount}명</span>
+                <span>관리자 {teamMembersData?.stats?.adminCount || 0}명</span>
           </div>
           <div className="flex items-center space-x-2">
             <Shield className="h-4 w-4" />
-                <span>활성 {teamMembersData.stats.activeMembers}명</span>
+                <span>활성 {teamMembersData?.stats?.activeMembers || 0}명</span>
               </div>
-              {teamMembersData.stats.pendingInvitations > 0 && (
+              {(teamMembersData?.stats?.pendingInvitations || 0) > 0 && (
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4" />
-                  <span>대기 중 {teamMembersData.stats.pendingInvitations}명</span>
+                  <span>대기 중 {teamMembersData?.stats?.pendingInvitations || 0}명</span>
           </div>
               )}
         </div>
@@ -383,8 +374,24 @@ export default function TeamPage() {
 
         {/* 팀원 목록 */}
         <div>
+          {(() => {
+            if (filteredMembers?.length === 0 && !isLoading) {
+              return (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">팀원이 없습니다.</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                    팀원을 초대하여 협업을 시작하세요.
+                  </p>
+                </div>
+              );
+            }
+            
+            if (filteredMembers && filteredMembers.length > 0) {
+              return (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredMembers.map((member) => (
+                  {filteredMembers.map((member) => {
+                    return (
                 <Card key={member.id} className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1 relative">
                 <CardContent className="p-4 relative">
                   {/* 초대 상태 태그 */}
@@ -544,40 +551,14 @@ export default function TeamPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+                    );
+                  })}
           </div>
-          
-          {filteredMembers.length === 0 && (
-            <div className="col-span-full">
-              <Card>
-                <CardContent className="p-12 text-center">
-                  <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                      {searchTerm || selectedRole !== 'all' ? '검색 결과가 없습니다' : '팀원이 없습니다'}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
-                      {searchTerm || selectedRole !== 'all' ? 
-                        '다른 검색어나 필터를 시도해보세요.' : 
-                        '첫 번째 팀원을 초대해보세요.'
-                      }
-                  </p>
-                    {searchTerm || selectedRole !== 'all' ? (
-                  <Button onClick={() => {
-                    setSearchTerm("");
-                    setSelectedRole("all");
-                  }}>
-                    필터 초기화
-                  </Button>
-                    ) : (
-                      <Button onClick={() => setIsInviteModalOpen(true)}>
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        팀원 초대
-                      </Button>
-                    )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
+              );
+            }
+            
+            return null;
+          })()}
         </div>
       </div>
 

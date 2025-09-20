@@ -37,7 +37,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Email Service (Resend)
 RESEND_API_KEY=your_resend_api_key
-RESEND_FROM_EMAIL=noreply@yourdomain.com
+RESEND_FROM_EMAIL=noreply@resend.dev  # 테스트용 (개발 모드에서는 콘솔 출력)
+# RESEND_FROM_EMAIL=noreply@yourdomain.com  # 프로덕션용 (도메인 인증 필요)
 
 # OAuth Providers (Supabase Dashboard에서 설정)
 # Kakao OAuth
@@ -110,7 +111,39 @@ CREATE POLICY "Users can update own profile" ON users
 -- 추가 테이블들 (teams, projects, tasks 등)은 기존 스키마 참조
 ```
 
-### 5. 개발 서버 실행
+### 5. 이메일 서비스 설정 (Resend)
+
+#### 개발 모드
+
+개발 환경에서는 이메일이 실제로 발송되지 않고 콘솔에 출력됩니다:
+
+```
+📧 [개발 모드] 이메일 발송 시뮬레이션:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📤 받는 사람: user@example.com
+📋 제목: 팀명 팀에 초대되었습니다
+👤 초대자: 홍길동
+🏢 팀: 개발팀
+🎭 역할: member
+🔗 초대 링크: http://localhost:3000/team/invite/invitation-id
+⏰ 만료일: 2024-09-26 14:37:37
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+#### 프로덕션 모드
+
+프로덕션에서는 실제 이메일이 발송됩니다. 다음 단계를 따라 설정하세요:
+
+1. [Resend](https://resend.com)에서 계정 생성
+2. 도메인 인증 (필수)
+3. API 키 발급
+4. 환경 변수 설정:
+   ```env
+   RESEND_API_KEY=re_xxxxxxxxx
+   RESEND_FROM_EMAIL=noreply@yourdomain.com  # 인증된 도메인 사용
+   ```
+
+### 6. 개발 서버 실행
 
 ```bash
 # 의존성 설치

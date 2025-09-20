@@ -24,19 +24,20 @@ export interface EmailSendResult {
  */
 export async function sendTeamInvitationEmail(data: TeamInvitationEmailData): Promise<EmailSendResult> {
   try {
-    console.log('📧 팀 초대 이메일 발송 시작:', {
-      to: data.inviteeEmail,
-      team: data.teamName,
-      inviter: data.inviterName,
-      role: data.role
-    });
-
-
     const subject = `${data.teamName} 팀에 초대되었습니다`;
     
     const htmlContent = generateInvitationEmailHTML(data);
     const textContent = generateInvitationEmailText(data);
 
+    // 개발/테스트 환경에서는 콘솔에 이메일 내용 출력
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      return {
+        success: true,
+        messageId: `dev-${Date.now()}`
+      };
+    }
+
+    // 프로덕션 환경에서만 실제 이메일 발송
     const result = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@resend.dev',
       to: data.inviteeEmail,
@@ -53,7 +54,6 @@ export async function sendTeamInvitationEmail(data: TeamInvitationEmailData): Pr
       };
     }
 
-    console.log('✅ 이메일 발송 성공:', result.data?.id);
     return {
       success: true,
       messageId: result.data?.id

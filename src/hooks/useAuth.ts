@@ -160,8 +160,6 @@ export function useAuth() {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event);
-        
         if (session) {
           queryClient.setQueryData(['session'], session);
         } else {
