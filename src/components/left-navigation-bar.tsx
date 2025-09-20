@@ -2,6 +2,7 @@
 
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/notification-bell";
 import { ReactNode } from "react";
 import { 
   Calendar, 
@@ -19,7 +20,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Team {
   id: string;
@@ -76,7 +77,8 @@ export function LeftNavigationBar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
-
+  const queryParams = useSearchParams();
+  const teamId = queryParams.get('teamId');
   // 키보드 단축키 (Ctrl/Cmd + B로 토글, ESC로 닫기)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -130,7 +132,7 @@ export function LeftNavigationBar({
   const handlePageChange = (pageId: string) => {
     const item = navigationItems.find(nav => nav.id === pageId);
     if (item) {
-      router.push(item.href);
+      router.push(`${item.href}?teamId=${teamId}`);
       onPageChange?.(pageId);
     }
     setIsMobileMenuOpen(false);
@@ -192,7 +194,7 @@ export function LeftNavigationBar({
               <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
                 <div className="space-y-1">
                   {teams.slice(0, 5).map((team) => {
-                    const isActive = currentTeam?.id === team.id;
+                    const isActive = teamId === team.id;
                     const teamColor = team.color || 'blue';
                     const colorClasses = {
                       blue: 'bg-blue-500',
@@ -517,13 +519,21 @@ export function LeftNavigationBar({
                 )}
 
                 {/* Right Actions */}
-                {rightActions && (
-                  <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="space-y-2">
-                      {rightActions}
+                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="space-y-2">
+                    {/* 알림 벨 */}
+                    <div className="flex items-center justify-center">
+                      <NotificationBell />
                     </div>
+                    
+                    {/* 기존 rightActions */}
+                    {rightActions && (
+                      <div className="space-y-2">
+                        {rightActions}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
