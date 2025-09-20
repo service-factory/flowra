@@ -167,7 +167,7 @@ export default function Dashboard() {
         isCollapsed={isLnbCollapsed}
         onToggleCollapse={() => setIsLnbCollapsed(!isLnbCollapsed)}
         activePage="dashboard"
-        teams={teams}
+        teams={teams as any}
         currentTeam={currentTeam}
         onTeamChange={(team) => {
           // 팀 변경 로직 (나중에 구현)

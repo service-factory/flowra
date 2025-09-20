@@ -9,13 +9,12 @@ import type { ViewMode } from "@/hooks/useViewMode";
 
 interface TaskViewRendererProps {
   viewMode: ViewMode;
-  filteredTasks: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  filteredTasks: any[];
   isLoading: boolean;
   teamId?: string;
-  currentTeam?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  currentTeam?: any;
   onTaskMove: (taskId: string, newStatus: string) => void;
-  onTaskClick: (task: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
-  onTagToggle: (tag: string) => void;
+  onTaskClick: (task: any) => void;
   openTaskCreateModal: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
   onTaskDelete?: (taskId: string) => Promise<void>;
   onTaskStatusUpdate?: (taskId: string, status: string) => Promise<void>;
@@ -29,7 +28,6 @@ export function TaskViewRenderer({
   // currentTeam,
   onTaskMove,
   onTaskClick,
-  onTagToggle,
   openTaskCreateModal,
   onTaskDelete,
   onTaskStatusUpdate,
@@ -41,10 +39,6 @@ export function TaskViewRenderer({
       <KanbanBoard
         columns={kanbanColumns}
         tasks={filteredTasks}
-        getTagColor={getTagColor}
-        onToggleTag={onTagToggle}
-        getPriorityColor={getPriorityColor}
-        getPriorityIcon={(priority: string) => <PriorityIcon priority={priority} />}
         onTaskMove={onTaskMove}
         onTaskClick={onTaskClick}
         openTaskCreateModal={openTaskCreateModal}
@@ -79,7 +73,6 @@ export function TaskViewRenderer({
                   key={task.id}
                   task={task}
                   getTagColor={getTagColor}
-                  onToggleTag={onTagToggle}
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   getPriorityColor={getPriorityColor}

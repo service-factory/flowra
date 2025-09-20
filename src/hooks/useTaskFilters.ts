@@ -62,7 +62,7 @@ export function useTaskFilters({ tasks, currentUserEmail }: UseTaskFiltersProps)
       return matchesSearch && matchesCompleted && matchesTags && 
              matchesAssignee && matchesDue && matchesPriority;
     });
-  }, [tasks, searchTerm, showCompleted, selectedTags, assigneeFilter, dueFilter, priorityFilter]);
+  }, [tasks, searchTerm, showCompleted, selectedTags, assigneeFilter, dueFilter, priorityFilter, currentUserEmail]);
 
   // 필터 핸들러들
   const handleTagToggle = (tag: string) => {

@@ -2,10 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 
 interface TeamData {
-  tasks: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
-  members: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
-  tags: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
-  projects: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  tasks: any[];
+  members: any[];
+  tags: any[];
+  projects: any[];
 }
 
 export function useTeamData(teamId: string | null) {

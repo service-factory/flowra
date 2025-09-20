@@ -36,6 +36,8 @@ export interface TeamInvitation {
 export type MemberOrInvitation = TeamMember | TeamInvitation;
 
 export interface TeamMembersData {
+  success: boolean;
+  error?: string;
   members: TeamMember[];
   invitations: TeamInvitation[];
   stats: {
@@ -79,14 +81,14 @@ export function useTeamMembers(teamId: string | null) {
       });
       
       console.log('🔍 팀원 데이터 응답:', response);
-      console.log('🔍 members 타입:', typeof response.data?.members, 'length:', response.data?.members?.length);
-      console.log('🔍 invitations 타입:', typeof response.data?.invitations, 'length:', response.data?.invitations?.length);
+      console.log('🔍 members 타입:', typeof response.members, 'length:', response.members?.length);
+      console.log('🔍 invitations 타입:', typeof response.invitations, 'length:', response.invitations?.length);
       
       if (!response.success) {
         throw new Error(response.error || '팀원 데이터를 불러올 수 없습니다');
       }
 
-      return response.data!;
+      return response;
     },
     enabled: !!teamId && teamId !== 'null' && teamId !== 'undefined',
     staleTime: 1000 * 60 * 5, // 5분

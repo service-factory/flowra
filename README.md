@@ -6,7 +6,7 @@ Flowra는 Supabase를 기반으로 한 현대적인 팀 협업 프로젝트 관�
 
 - 🔐 Supabase OAuth 인증 (카카오, 구글)
 - 📋 태스크 관리 (칸반 보드, 리스트 뷰)
-- 👥 팀 관리 및 멤버 초대
+- 👥 팀 관리 및 이메일 멤버 초대
 - 📊 프로젝트 진행 상황 추적
 - 🔔 실시간 알림 시스템
 - 📱 반응형 디자인
@@ -18,6 +18,8 @@ Flowra는 Supabase를 기반으로 한 현대적인 팀 협업 프로젝트 관�
 - **UI**: Tailwind CSS, shadcn/ui
 - **State Management**: Zustand
 - **Authentication**: Supabase Auth with OAuth
+- **Email Service**: Resend
+- **Data Fetching**: TanStack Query
 
 ## 시작하기
 
@@ -26,16 +28,23 @@ Flowra는 Supabase를 기반으로 한 현대적인 팀 협업 프로젝트 관�
 `.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
 
 ```env
+# Next.js
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Email Service (Resend)
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
 
 # OAuth Providers (Supabase Dashboard에서 설정)
 # Kakao OAuth
 KAKAO_CLIENT_ID=your_kakao_client_id
 KAKAO_CLIENT_SECRET=your_kakao_client_secret
 
-# Google OAuth  
+# Google OAuth
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
@@ -44,7 +53,21 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 NODE_ENV=development
 ```
 
-### 2. Supabase 설정
+### 2. Resend 이메일 서비스 설정
+
+팀 초대 이메일을 발송하기 위해 Resend 서비스를 설정해야 합니다:
+
+1. [Resend](https://resend.com)에 가입
+2. API 키 생성
+3. 도메인 인증 (선택사항, 개발 시에는 기본 도메인 사용 가능)
+4. `.env.local`에 API 키와 발신 이메일 설정
+
+```env
+RESEND_API_KEY=re_your_api_key_here
+RESEND_FROM_EMAIL=noreply@yourdomain.com  # 또는 noreply@resend.dev
+```
+
+### 3. Supabase 설정
 
 1. [Supabase](https://supabase.com)에서 새 프로젝트를 생성하세요.
 2. 프로젝트 설정에서 OAuth 제공자를 설정하세요:
@@ -52,7 +75,7 @@ NODE_ENV=development
    - **구글**: [Google Cloud Console](https://console.cloud.google.com)에서 OAuth 2.0 클라이언트 ID 생성
 3. Supabase Dashboard > Authentication > Providers에서 OAuth 설정을 완료하세요.
 
-### 3. 데이터베이스 설정
+### 4. 데이터베이스 설정
 
 Supabase SQL Editor에서 다음 SQL을 실행하여 필요한 테이블을 생성하세요:
 
@@ -87,7 +110,7 @@ CREATE POLICY "Users can update own profile" ON users
 -- 추가 테이블들 (teams, projects, tasks 등)은 기존 스키마 참조
 ```
 
-### 4. 개발 서버 실행
+### 5. 개발 서버 실행
 
 ```bash
 # 의존성 설치

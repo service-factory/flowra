@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 병렬로 유효성 검증 (성능 최적화)
-    const validationPromises = [];
+    const validationPromises: any[] = [];
     
     if (taskData.project_id) {
       validationPromises.push(
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 비동기로 추가 작업들 처리 (성능 최적화)
-    const additionalTasks = [];
+    const additionalTasks: any[] = [];
 
     // 태그 처리 (metadata에 tags가 있는 경우)
     if (taskData.metadata?.tags && Array.isArray(taskData.metadata.tags)) {

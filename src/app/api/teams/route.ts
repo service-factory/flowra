@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 비동기로 기본 데이터 생성 (성능 최적화)
-    const additionalTasks = [];
+    const additionalTasks: any[] = [];
 
     // 기본 프로젝트 생성
     additionalTasks.push(

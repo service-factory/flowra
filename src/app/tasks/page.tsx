@@ -272,7 +272,6 @@ export default function TasksPage() {
             currentTeam={currentTeam}
             onTaskMove={handleOptimisticTaskMove}
             onTaskClick={handleTaskClick}
-            onTagToggle={handleTagToggle}
             openTaskCreateModal={openTaskCreateModal}
             onTaskDelete={handleOptimisticTaskDelete}
             onTaskStatusUpdate={handleOptimisticStatusUpdate}

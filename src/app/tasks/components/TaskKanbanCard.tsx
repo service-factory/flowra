@@ -13,7 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Trash2, RefreshCw, Link, Copy } from "lucide-react";
+import { MoreHorizontal, Trash2, RefreshCw, Link } from "lucide-react";
 import React from "react";
 import { TaskStatus } from "@/types";
 
@@ -49,10 +49,6 @@ interface TaskData {
 
 interface Props {
   task: TaskData;
-  getTagColor: (tag: string) => string;
-  onToggleTag: (tag: string) => void;
-  getPriorityColor: (p: string) => string;
-  getPriorityIcon: (p: string) => React.ReactNode;
   onTaskClick: (task: TaskData) => void;
   onTaskDelete?: (taskId: string) => Promise<void>;
   onTaskStatusUpdate?: (taskId: string, status: TaskStatus) => Promise<void>;
@@ -61,10 +57,6 @@ interface Props {
 
 export function TaskKanbanCard({ 
   task, 
-  getTagColor, 
-  onToggleTag, 
-  getPriorityColor, 
-  getPriorityIcon,
   onTaskClick,
   onTaskDelete,
   onTaskStatusUpdate,
@@ -111,16 +103,6 @@ export function TaskKanbanCard({
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "pending": return "대기";
-      case "in_progress": return "진행중";
-      case "completed": return "완료";
-      case "cancelled": return "취소";
-      case "on_hold": return "보류";
-      default: return status;
-    }
-  };
 
   return (
     <div 

@@ -15,7 +15,7 @@ interface CalendarHeaderProps {
   onViewModeChange: (mode: "month" | "week" | "day") => void;
   onNavigate: (direction: "prev" | "next") => void;
   onGoToToday: () => void;
-  onTaskCreate: (newTask: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+  onTaskCreate: (newTask: any) => void;
   openTaskCreateModal?: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
 }
 

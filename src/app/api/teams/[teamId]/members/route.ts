@@ -21,11 +21,12 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }
 ) {
+  const resolvedParams = await params;
+  const { teamId } = resolvedParams;
+  
   try {
     console.log('🔍 팀원 목록 API 호출:', { url: request.url, method: request.method });
-    const resolvedParams = await params;
     console.log('📋 파라미터:', resolvedParams);
-    const { teamId } = resolvedParams;
     
     // 팀 인증 및 권한 확인
     console.log('🔐 팀 인증 시작:', teamId);
@@ -73,7 +74,7 @@ export async function GET(
     console.log('✅ 팀원 목록 조회 성공:', members?.length || 0, '명');
 
     // 팀원별 업무 통계 조회 (N+1 문제 해결을 위한 단일 쿼리)
-    const memberIds = members?.map(m => m.users.id) || [];
+    const memberIds = (members?.map(m => m.users?.id).filter(Boolean) || []) as string[];
     console.log('📈 업무 통계 조회 시작:', memberIds.length, '명');
     const { data: taskStats, error: statsError } = await supabase
       .from('tasks')
@@ -102,37 +103,78 @@ export async function GET(
       return acc;
     }, {} as Record<string, { completed: number; current: number; overdue: number }>);
 
-    // 대기 중인 초대 조회 (현재 team_invitations 테이블이 없으므로 빈 배열 반환)
-    console.log('📧 초대 목록 조회 건너뛰기 (테이블 미구현)');
-    const invitations: never[] = [];
+    // 대기 중인 초대 조회
+    console.log('📧 초대 목록 조회 시작');
+    const { data: invitations, error: invitationsError } = await supabase
+      .from('team_invitations')
+      .select(`
+        id,
+        email,
+        role,
+        token,
+        expires_at,
+        accepted_at,
+        created_at,
+        users!team_invitations_invited_by_fkey (
+          id,
+          name,
+          email
+        )
+      `)
+      .eq('team_id', teamId)
+      .is('accepted_at', null)
+      .order('created_at', { ascending: false });
+
+    if (invitationsError) {
+      console.error('⚠️ 초대 목록 조회 실패:', invitationsError);
+    } else {
+      console.log('✅ 초대 목록 조회 성공:', invitations?.length || 0, '개');
+    }
 
     // 데이터 구조 최적화
     console.log('🔄 데이터 최적화 시작');
-    const optimizedMembers = (members || []).map(member => ({
-      id: member.users.id,
-      name: member.users.name,
-      email: member.users.email,
-      avatar: member.users.avatar_url,
+    const optimizedMembers = (members || [])
+      .filter(member => member.users) // null 체크
+      .map(member => ({
+      id: member.users!.id,
+      name: member.users!.name,
+      email: member.users!.email,
+      avatar: member.users!.avatar_url,
       role: member.role,
       permissions: member.permissions,
       joinDate: member.joined_at,
       lastActive: null,
       isActive: member.is_active,
-      taskStats: memberTaskStats[member.users.id] || { completed: 0, current: 0, overdue: 0 },
+      taskStats: memberTaskStats[member.users!.id] || { completed: 0, current: 0, overdue: 0 },
       isInvitation: false,
     }));
 
-    const optimizedInvitations = (invitations || []).map(invitation => ({
-      id: invitation.id,
-      email: invitation.email,
-      role: invitation.role,
-      message: invitation.message,
-      invitedBy: invitation.users?.name || '알 수 없음',
-      invitedAt: invitation.created_at,
-      expiresAt: invitation.expires_at,
-      status: invitation.status,
-      isInvitation: true,
-    }));
+    const optimizedInvitations = (invitations || []).map(invitation => {
+      // 만료 여부 확인
+      const now = new Date();
+      const expiresAt = new Date(invitation.expires_at);
+      const isExpired = now > expiresAt;
+      const isAccepted = !!invitation.accepted_at;
+      
+      let status = 'pending';
+      if (isAccepted) {
+        status = 'accepted';
+      } else if (isExpired) {
+        status = 'expired';
+      }
+      
+      return {
+        id: invitation.id,
+        email: invitation.email,
+        role: invitation.role,
+        message: '', // 기존 스키마에는 message 필드가 없음
+        invitedBy: invitation.users?.name || '알 수 없음',
+        invitedAt: invitation.created_at,
+        expiresAt: invitation.expires_at,
+        status: status,
+        isInvitation: true,
+      };
+    });
 
     console.log('✅ 데이터 최적화 완료:', {
       members: optimizedMembers.length,
@@ -163,18 +205,232 @@ export async function GET(
   }
 }
 
-// 팀원 초대 (현재 team_invitations 테이블이 없으므로 임시 비활성화)
+// 팀원 초대
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ teamId: string }> }
 ) {
+  const resolvedParams = await params;
+  const { teamId } = resolvedParams;
+  
   try {
-    console.log('🔍 팀원 초대 API 호출 (임시 비활성화):', { url: request.url, method: request.method });
+    console.log('🔍 팀원 초대 API 호출:', { url: request.url, method: request.method });
+    console.log('📋 파라미터:', resolvedParams);
+
+    // 팀 인증 및 권한 확인 (멤버 관리 권한 필요)
+    const authResult = await authenticateWithTeam(request, teamId, ['can_manage_members']);
+    if (!authResult.success) {
+      return authResult.error!;
+    }
+
+    const { user, supabase } = authResult;
+    if (!supabase || !user) {
+      return createErrorResponse('인증 정보 또는 데이터베이스 연결 오류', 500);
+    }
+
+    // 요청 데이터 파싱 및 검증
+    const body = await request.json();
+    const validationResult = inviteMemberSchema.safeParse(body);
     
-    return createErrorResponse('팀원 초대 기능은 현재 개발 중입니다', 501);
+    if (!validationResult.success) {
+      console.error('❌ 초대 데이터 검증 실패:', validationResult.error);
+      return createErrorResponse(
+        validationResult.error.issues[0]?.message || '올바른 초대 정보를 입력하세요',
+        400
+      );
+    }
+
+    const { invitations } = validationResult.data;
+
+    // 팀 정보 조회 (이메일에서 사용)
+    const { data: team, error: teamError } = await supabase
+      .from('teams')
+      .select('name, slug')
+      .eq('id', teamId)
+      .single();
+
+    if (teamError || !team) {
+      console.error('❌ 팀 정보 조회 실패:', teamError);
+      return createErrorResponse('팀 정보를 찾을 수 없습니다', 404);
+    }
+
+    // 초대자 정보 조회
+    const { data: inviter, error: inviterError } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', user.id)
+      .single();
+
+    if (inviterError || !inviter) {
+      console.error('❌ 초대자 정보 조회 실패:', inviterError);
+      return createErrorResponse('초대자 정보를 찾을 수 없습니다', 404);
+    }
+
+    const results: any[] = [];
+    
+    for (const invitation of invitations) {
+      try {
+        // 이미 팀 멤버인지 확인 (이메일로 사용자 찾기)
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', invitation.email)
+          .single();
+
+        let existingMember: { id: string } | null = null;
+        if (existingUser) {
+          const { data: memberCheck } = await supabase
+            .from('team_members')
+            .select('id')
+            .eq('team_id', teamId)
+            .eq('user_id', existingUser.id)
+            .eq('is_active', true)
+            .single();
+          existingMember = memberCheck || null;
+        }
+
+        if (existingMember) {
+          results.push({
+            email: invitation.email,
+            success: false,
+            error: '이미 팀에 참여하고 있는 사용자입니다'
+          });
+          continue;
+        }
+
+        // 기존 대기중인 초대가 있는지 확인
+        const { data: existingInvitation } = await supabase
+          .from('team_invitations')
+          .select('id, status')
+          .eq('team_id', teamId)
+          .eq('email', invitation.email)
+          .eq('status', 'pending')
+          .single();
+
+        if (existingInvitation) {
+          results.push({
+            email: invitation.email,
+            success: false,
+            error: '이미 초대가 진행 중입니다'
+          });
+          continue;
+        }
+
+        // 초대 만료 시간 설정 (7일 후)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        // 초대 토큰 생성
+        const inviteToken = `invite_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // 팀 초대 생성
+        const { data: newInvitation, error: invitationError } = await supabase
+          .from('team_invitations')
+          .insert({
+            team_id: teamId,
+            email: invitation.email,
+            role: invitation.role,
+            token: inviteToken,
+            invited_by: user.id,
+            expires_at: expiresAt.toISOString(),
+          })
+          .select('id')
+          .single();
+
+        if (invitationError || !newInvitation) {
+          console.error('❌ 초대 생성 실패:', invitationError);
+          results.push({
+            email: invitation.email,
+            success: false,
+            error: '초대 생성에 실패했습니다'
+          });
+          continue;
+        }
+
+        // 초대 URL 생성
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const inviteUrl = `${baseUrl}/team/invite/${newInvitation.id}?token=${newInvitation.id}&email=${encodeURIComponent(invitation.email)}`;
+
+        // 이메일 발송
+        const { sendTeamInvitationEmail } = await import('@/lib/services/email/emailService');
+        const emailResult = await sendTeamInvitationEmail({
+          inviteeEmail: invitation.email,
+          teamName: team.name,
+          inviterName: inviter.name,
+          role: invitation.role,
+          inviteUrl,
+          message: invitation.message,
+          expiresAt: expiresAt.toISOString(),
+        });
+
+        if (!emailResult.success) {
+          console.error('❌ 이메일 발송 실패:', emailResult.error);
+          
+          // 이메일 발송 실패 시 초대 레코드 삭제
+          await supabase
+            .from('team_invitations')
+            .delete()
+            .eq('id', newInvitation.id);
+
+          results.push({
+            email: invitation.email,
+            success: false,
+            error: `이메일 발송 실패: ${emailResult.error}`
+          });
+          continue;
+        }
+
+        console.log('✅ 초대 성공:', {
+          email: invitation.email,
+          invitationId: newInvitation.id,
+          messageId: emailResult.messageId
+        });
+
+        results.push({
+          email: invitation.email,
+          success: true,
+          invitationId: newInvitation.id,
+          messageId: emailResult.messageId
+        });
+
+      } catch (error) {
+        console.error('❌ 개별 초대 처리 실패:', error);
+        results.push({
+          email: invitation.email,
+          success: false,
+          error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
+        });
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failCount = results.length - successCount;
+
+    console.log('📊 초대 결과 요약:', {
+      total: results.length,
+      success: successCount,
+      failed: failCount
+    });
+
+    return createSuccessResponse({
+      results,
+      summary: {
+        total: results.length,
+        success: successCount,
+        failed: failCount
+      },
+      message: successCount > 0 
+        ? `${successCount}명의 초대가 성공적으로 발송되었습니다`
+        : '모든 초대 발송에 실패했습니다'
+    });
 
   } catch (error) {
-    console.error('팀원 초대 API 오류:', error);
+    console.error('🔴 팀원 초대 API 오류:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      teamId,
+      url: request.url
+    });
     return createErrorResponse('서버 오류가 발생했습니다', 500);
   }
 }
@@ -316,9 +572,38 @@ export async function DELETE(
     }
 
     if (invitationId) {
-      // 초대 취소 (현재 team_invitations 테이블이 없으므로 임시 비활성화)
-      console.log('초대 취소 기능은 현재 개발 중입니다');
-      return createErrorResponse('초대 취소 기능은 현재 개발 중입니다', 501);
+      // 초대 취소 (초대 레코드 삭제)
+      const { data: invitation, error: invitationError } = await supabase
+        .from('team_invitations')
+        .select('id, email, accepted_at')
+        .eq('id', invitationId)
+        .eq('team_id', teamId)
+        .single();
+
+      if (invitationError || !invitation) {
+        return createErrorResponse('초대 정보를 찾을 수 없습니다', 404);
+      }
+
+      if (invitation.accepted_at) {
+        return createErrorResponse('이미 수락된 초대는 취소할 수 없습니다', 400);
+      }
+
+      // 초대 레코드 삭제
+      const { error: deleteError } = await supabase
+        .from('team_invitations')
+        .delete()
+        .eq('id', invitationId)
+        .eq('team_id', teamId);
+
+      if (deleteError) {
+        console.error('초대 취소 실패:', deleteError);
+        return createErrorResponse('초대 취소에 실패했습니다', 500);
+      }
+
+      return createSuccessResponse({ 
+        message: `${invitation.email}에 대한 초대가 취소되었습니다`,
+        email: invitation.email
+      });
     }
 
     if (memberId) {

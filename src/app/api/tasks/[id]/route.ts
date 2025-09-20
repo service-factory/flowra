@@ -138,7 +138,7 @@ export async function DELETE(
     }
 
     // 관련 데이터 삭제 (트랜잭션 방식)
-    const { error: deleteError } = await supabase.rpc('delete_task_with_relations', {
+    const { error: deleteError } = await (supabase as any).rpc('delete_task_with_relations', {
       task_id: taskId,
       team_id: team_id
     });

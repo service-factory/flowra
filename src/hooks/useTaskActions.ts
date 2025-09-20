@@ -23,7 +23,7 @@ export function useTaskActions(
       const response = await apiRequest.delete({
         url: `/api/tasks/${taskId}`,
         body: { team_id: teamId }
-      });
+      }) as any;
 
       if (!response.success) {
         throw new Error(response.error || '업무 삭제에 실패했습니다');
@@ -66,7 +66,7 @@ export function useTaskActions(
                 ...task, 
                 status, 
                 updated_at: new Date().toISOString(),
-                completed_at: status === 'completed' ? new Date().toISOString() : (status === 'completed' ? task.completed_at : null)
+                 completed_at: status === 'completed' ? new Date().toISOString() : undefined
               }
             : task
         );
@@ -82,7 +82,7 @@ export function useTaskActions(
           team_id: teamId,
           status
         }
-      });
+      }) as any;
 
       if (!response.success) {
         console.error('❌ Status Update Failed:', response.error);
@@ -128,7 +128,7 @@ export function useTaskActions(
       const response = await apiRequest.delete({
         url: `/api/tasks/${taskId}`,
         body: { team_id: teamId }
-      });
+      }) as any;
 
       if (!response.success) {
         // 실패 시 이전 상태로 되돌리기

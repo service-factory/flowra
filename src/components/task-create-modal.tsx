@@ -38,13 +38,13 @@ import {
 
 interface TaskCreateModalProps {
   trigger?: React.ReactNode;
-  onTaskCreate?: (task: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+  onTaskCreate?: (task: any) => void;
   initialStatus?: string;
   initialDueDate?: string;
   teamId?: string;
   projectId?: string;
-  teamMembers?: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
-  projects?: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  teamMembers?: any[];
+  projects?: any[];
   isLoading?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;

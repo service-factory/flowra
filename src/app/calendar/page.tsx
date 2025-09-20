@@ -25,7 +25,7 @@ export default function CalendarPage() {
   const router = useRouter();
   const teamId = searchParams.get('teamId');
   
-  const { teamMemberships, currentTeam, refreshTeamData, isLoading: authLoading, user } = useAuth();
+  const { teamMemberships, currentTeam, refreshTeamData } = useAuth();
   
   const actualTeamId = useMemo(() => {
     if (teamId === '0' || !teamId) {
@@ -61,7 +61,6 @@ export default function CalendarPage() {
     handleTaskUpdate,
     handleTaskDelete,
     handleDrawerClose,
-    handleRefresh,
   } = useTaskHandlers({ refetch, tasks });
 
 
@@ -225,7 +224,6 @@ export default function CalendarPage() {
             viewMode={viewMode}
             tasksByDate={tasksByDate}
             onTaskClick={handleTaskClick}
-            onTaskCreate={handleTaskCreate}
             onTaskMove={handleTaskMove}
             getStatusText={getStatusText}
             getPriorityIcon={getPriorityIcon}

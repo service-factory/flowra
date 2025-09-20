@@ -17,7 +17,6 @@ import {
   UserPlus,
   MoreHorizontal,
   Search,
-  Filter,
   Crown,
   Shield,
   Settings,
@@ -26,11 +25,9 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
-  CheckCircle2,
   Clock,
   UserX,
   Send,
-  Trash2,
   Edit3,
   Download,
 } from "lucide-react";
@@ -79,7 +76,6 @@ export default function TeamPage() {
   const [isLnbCollapsed, setIsLnbCollapsed] = useState(true);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
@@ -114,14 +110,12 @@ export default function TeamPage() {
     searchTerm,
     selectedRole,
     isInviting,
-    isUpdatingRole,
     isRemoving,
     isCancelling,
     isResending,
     setSearchTerm,
     setSelectedRole,
     handleInviteMembers,
-    handleUpdateMemberRole,
     handleRemoveMember,
     handleCancelInvitation,
     handleResendInvitation,

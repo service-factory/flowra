@@ -3,11 +3,11 @@ import { useSearchParams, useRouter } from 'next/navigation';
 
 interface UseTaskHandlersProps {
   refetch: () => void;
-  tasks?: any[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+  tasks?: any[];
 }
 
 export function useTaskHandlers({ refetch, tasks = [] }: UseTaskHandlersProps) {
-  const [selectedTask, setSelectedTask] = useState<any | null>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -42,7 +42,7 @@ export function useTaskHandlers({ refetch, tasks = [] }: UseTaskHandlersProps) {
     refetch();
   };
 
-  const handleTaskClick = useCallback((task: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  const handleTaskClick = useCallback((task: any) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('taskId', task.id);
     router.push(`?${params.toString()}`);

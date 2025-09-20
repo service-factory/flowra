@@ -10,7 +10,7 @@ import { AlertCircle, Palette, Plus, Send } from "lucide-react";
 interface ProjectCreateModalProps {
   teamId?: string;
   trigger?: React.ReactNode;
-  onCreated?: (project: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+  onCreated?: (project: any) => void;
 }
 
 export function ProjectCreateModal({ teamId, trigger, onCreated }: ProjectCreateModalProps) {

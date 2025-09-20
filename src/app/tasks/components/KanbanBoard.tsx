@@ -66,10 +66,6 @@ interface Task {
 interface Props {
   columns: ColumnConfig[];
   tasks: Task[];
-  getTagColor: (tag: string) => string;
-  onToggleTag: (tag: string) => void;
-  getPriorityColor: (p: string) => string;
-  getPriorityIcon: (p: string) => React.ReactNode;
   onTaskMove?: (taskId: string, newStatus: string, newIndex?: number) => void;
   onTaskClick: (task: Task) => void;
   openTaskCreateModal: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
@@ -81,20 +77,12 @@ interface Props {
 // 드래그 가능한 칸반 카드 컴포넌트
 function DraggableTaskCard({ 
   task, 
-  getTagColor, 
-  onToggleTag, 
-  getPriorityColor, 
-  getPriorityIcon,
   onTaskClick,
   onTaskDelete,
   onTaskStatusUpdate,
   teamId
 }: {
   task: Task;
-  getTagColor: (tag: string) => string;
-  onToggleTag: (tag: string) => void;
-  getPriorityColor: (p: string) => string;
-  getPriorityIcon: (p: string) => React.ReactNode;
   onTaskClick: (task: Task) => void;
   onTaskDelete?: (taskId: string) => Promise<void>;
   onTaskStatusUpdate?: (taskId: string, status: string) => Promise<void>;
@@ -140,10 +128,6 @@ function DraggableTaskCard({
     >
       <TaskKanbanCard
         task={task}
-        getTagColor={getTagColor}
-        onToggleTag={onToggleTag}
-        getPriorityColor={getPriorityColor}
-        getPriorityIcon={getPriorityIcon}
         onTaskClick={onTaskClick}
         onTaskDelete={onTaskDelete}
         onTaskStatusUpdate={onTaskStatusUpdate}
@@ -157,10 +141,6 @@ function DraggableTaskCard({
 function DroppableColumn({ 
   column, 
   tasks, 
-  getTagColor, 
-  onToggleTag, 
-  getPriorityColor, 
-  getPriorityIcon, 
   onTaskClick,
   openTaskCreateModal,
   onTaskDelete,
@@ -169,10 +149,6 @@ function DroppableColumn({
 }: {
   column: ColumnConfig;
   tasks: Task[];
-  getTagColor: (tag: string) => string;
-  onToggleTag: (tag: string) => void;
-  getPriorityColor: (p: string) => string;
-  getPriorityIcon: (p: string) => React.ReactNode;
   onTaskClick: (task: Task) => void;
   openTaskCreateModal: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
   onTaskDelete?: (taskId: string) => Promise<void>;
@@ -255,10 +231,6 @@ function DroppableColumn({
                 <DraggableTaskCard
                   key={task.id}
                   task={task}
-                  getTagColor={getTagColor}
-                  onToggleTag={onToggleTag}
-                  getPriorityColor={getPriorityColor}
-                  getPriorityIcon={getPriorityIcon}
                   onTaskClick={onTaskClick}
                   onTaskDelete={onTaskDelete}
                   onTaskStatusUpdate={onTaskStatusUpdate}
@@ -276,10 +248,6 @@ function DroppableColumn({
 export function KanbanBoard({
   columns,
   tasks,
-  getTagColor,
-  onToggleTag,
-  getPriorityColor,
-  getPriorityIcon,
   onTaskMove,
   onTaskClick,
   openTaskCreateModal,
@@ -451,10 +419,6 @@ export function KanbanBoard({
               key={column.id}
               column={column}
               tasks={column.tasks}
-              getTagColor={getTagColor}
-              onToggleTag={onToggleTag}
-              getPriorityColor={getPriorityColor}
-              getPriorityIcon={getPriorityIcon}
               onTaskClick={onTaskClick}
               openTaskCreateModal={openTaskCreateModal}
               onTaskDelete={onTaskDelete}
@@ -470,10 +434,6 @@ export function KanbanBoard({
           <div className="rotate-3 scale-110 opacity-95 shadow-2xl ring-4 ring-blue-300 dark:ring-blue-600 rounded-lg border-2 border-blue-400 dark:border-blue-500 bg-white dark:bg-gray-800 p-1">
             <TaskKanbanCard
               task={activeTask}
-              getTagColor={getTagColor}
-              onToggleTag={onToggleTag}
-              getPriorityColor={getPriorityColor}
-              getPriorityIcon={getPriorityIcon}
               onTaskClick={() => {}}
               onTaskDelete={onTaskDelete}
               onTaskStatusUpdate={onTaskStatusUpdate}

@@ -40,7 +40,6 @@ interface TaskData {
 interface Props {
   task: TaskData;
   getTagColor: (tag: string) => string;
-  onToggleTag: (tag: string) => void;
   getStatusColor: (status: string) => string;
   getStatusText: (status: string) => string;
   getPriorityColor: (p: string) => string;
@@ -54,7 +53,6 @@ interface Props {
 export function TaskListCard({ 
   task, 
   getTagColor, 
-  onToggleTag, 
   getStatusColor, 
   getStatusText, 
   getPriorityColor, 
@@ -148,14 +146,10 @@ export function TaskListCard({
             {task.tags && task.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1 ml-5">
                 {task.tags.slice(0, 3).map((tag: string, index: number) => (
-                  <Badge 
+                  <Badge
                     key={index}
                     variant="secondary"
-                    className={`text-xs px-1.5 py-0.5 ${getTagColor(tag)} hover:scale-105 transition-transform cursor-pointer`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleTag(tag);
-                    }}
+                    className={`text-xs px-1.5 py-0.5 ${getTagColor(tag)}`}
                   >
                     {tag}
                   </Badge>

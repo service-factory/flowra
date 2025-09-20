@@ -364,3 +364,11 @@ export const {
   delete: deleteFetch,
   patch: patchFetch,
 } = apiRequest;
+
+export const customFetch = {
+  getFetch,
+  postFetch,
+  putFetch,
+  deleteFetch,
+  patchFetch,
+};

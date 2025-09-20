@@ -248,7 +248,7 @@ export function CalendarView({
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
 
-    const days = [];
+    const days: Date[] = [];
     
     // 이전 달의 마지막 날들
     for (let i = startingDayOfWeek - 1; i >= 0; i--) {
@@ -276,7 +276,7 @@ export function CalendarView({
     const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // 월요일 시작
     startOfWeek.setDate(diff);
     
-    const days = [];
+    const days: Date[] = [];
     for (let i = 0; i < 7; i++) {
       const day = new Date(startOfWeek);
       day.setDate(startOfWeek.getDate() + i);

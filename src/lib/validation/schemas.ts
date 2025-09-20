@@ -40,11 +40,14 @@ export const taskSchema = z.object({
   project_id: z.string().uuid('유효한 프로젝트 ID를 입력해주세요').optional(),
 });
 
-export const taskUpdateSchema = taskSchema.partial();
+export const taskUpdateSchema = taskSchema.partial().extend({
+  completed_at: z.string().datetime().nullable().optional(),
+});
 
 export const taskStatusUpdateSchema = z.object({
   status: z.enum(['pending', 'in_progress', 'completed', 'cancelled', 'on_hold']),
   comment: z.string().max(500, '댓글은 500자를 초과할 수 없습니다').optional(),
+  completed_at: z.string().datetime().nullable().optional(),
 });
 
 // 댓글 관련 스키마
@@ -57,7 +60,7 @@ export const commentSchema = z.object({
 // 파일 관련 스키마
 export const fileUploadSchema = z.object({
   task_id: z.string().uuid('유효한 업무 ID를 입력해주세요'),
-  file: z.instanceof(File, '파일을 선택해주세요'),
+  file: z.instanceof(File, { message: '파일을 선택해주세요' }),
 });
 
 // 알림 관련 스키마
@@ -65,7 +68,7 @@ export const notificationSchema = z.object({
   type: z.string().min(1, '알림 타입은 필수입니다'),
   title: z.string().min(1, '제목은 필수입니다').max(255, '제목은 255자를 초과할 수 없습니다'),
   content: z.string().max(1000, '내용은 1000자를 초과할 수 없습니다').optional(),
-  data: z.record(z.any()).default({}),
+  data: z.record(z.string(), z.any()).default({}),
   expires_at: z.string().datetime('유효한 만료 날짜를 입력해주세요').optional(),
 });
 
