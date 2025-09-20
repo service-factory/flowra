@@ -23,6 +23,18 @@ Flowra는 Supabase를 기반으로 한 현대적인 팀 협업 프로젝트 관�
 
 ## 시작하기
 
+### 0. 개발 환경 최적화 (ENOENT 에러 방지)
+
+ENOENT 에러를 방지하기 위해 개발 환경을 최적화합니다:
+
+```bash
+# 자동 최적화 스크립트 실행
+./scripts/setup-dev.sh
+
+# 또는 수동으로 실행
+npm run dev:clean
+```
+
 ### 1. 환경 변수 설정
 
 `.env.local` 파일을 생성하고 다음 변수들을 설정하세요:
