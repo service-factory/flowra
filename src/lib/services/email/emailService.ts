@@ -13,6 +13,16 @@ export interface TeamInvitationEmailData {
   expiresAt: string;
 }
 
+export interface NotificationEmailData {
+  recipientEmail: string;
+  recipientName?: string;
+  notificationType: 'task_assigned' | 'task_due' | 'task_overdue' | 'task_completed' | 'team_invitation' | 'team_member_joined';
+  title: string;
+  content: string;
+  actionUrl?: string;
+  data?: Record<string, any>;
+}
+
 export interface EmailSendResult {
   success: boolean;
   messageId?: string;
@@ -294,4 +304,209 @@ ${data.message}
 이 이메일은 Flowra 팀 관리 시스템에서 자동으로 발송되었습니다.
 © 2024 Flowra. All rights reserved.
   `.trim();
+}
+
+/**
+ * 알림 이메일을 발송합니다
+ */
+export async function sendNotificationEmail(data: NotificationEmailData): Promise<EmailSendResult> {
+  try {
+    const subject = `[Flowra] ${data.title}`;
+    
+    const htmlContent = generateNotificationEmailHTML(data);
+    const textContent = generateNotificationEmailText(data);
+
+    // 개발/테스트 환경에서는 콘솔에 이메일 내용 출력
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      console.log('📧 알림 이메일 발송 (개발 환경):', {
+        to: data.recipientEmail,
+        subject,
+        type: data.notificationType,
+        title: data.title,
+        content: data.content
+      });
+      return {
+        success: true,
+        messageId: `dev-notification-${Date.now()}`
+      };
+    }
+
+    // 프로덕션 환경에서만 실제 이메일 발송
+    const result = await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@resend.dev',
+      to: data.recipientEmail,
+      subject,
+      html: htmlContent,
+      text: textContent,
+    });
+
+    if (result.error) {
+      console.error('❌ 알림 이메일 발송 실패:', result.error);
+      return {
+        success: false,
+        error: result.error.message || '이메일 발송에 실패했습니다'
+      };
+    }
+
+    console.log('✅ 알림 이메일 발송 성공:', {
+      messageId: result.data?.id,
+      to: data.recipientEmail,
+      type: data.notificationType
+    });
+
+    return {
+      success: true,
+      messageId: result.data?.id
+    };
+
+  } catch (error) {
+    console.error('❌ 알림 이메일 발송 중 오류:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다'
+    };
+  }
+}
+
+/**
+ * 알림 이메일 HTML 템플릿 생성
+ */
+function generateNotificationEmailHTML(data: NotificationEmailData): string {
+  const notificationIcon = getNotificationIcon(data.notificationType);
+  const actionButton = data.actionUrl ? `
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${data.actionUrl}" style="
+        display: inline-block;
+        background-color: #3B82F6;
+        color: white;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+      ">상세 보기</a>
+    </div>
+  ` : '';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${data.title}</title>
+    </head>
+    <body style="
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #374151;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9fafb;
+    ">
+      <div style="
+        background-color: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      ">
+        <!-- 헤더 -->
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="
+            width: 48px;
+            height: 48px;
+            background-color: #3B82F6;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+          ">${notificationIcon}</div>
+          <h1 style="
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #111827;
+          ">${data.title}</h1>
+        </div>
+
+        <!-- 내용 -->
+        <div style="
+          background-color: #f9fafb;
+          border-radius: 6px;
+          padding: 20px;
+          margin-bottom: 20px;
+        ">
+          <p style="margin: 0; font-size: 16px; line-height: 1.6;">
+            ${data.content}
+          </p>
+        </div>
+
+        ${actionButton}
+
+        <!-- 푸터 -->
+        <div style="
+          border-top: 1px solid #e5e7eb;
+          padding-top: 20px;
+          margin-top: 30px;
+          text-align: center;
+          font-size: 14px;
+          color: #6b7280;
+        ">
+          <p style="margin: 0;">
+            이 이메일은 Flowra 팀 관리 시스템에서 자동으로 발송되었습니다.
+          </p>
+          <p style="margin: 5px 0 0 0;">
+            © 2024 Flowra. All rights reserved.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * 알림 이메일 텍스트 템플릿 생성
+ */
+function generateNotificationEmailText(data: NotificationEmailData): string {
+  const notificationIcon = getNotificationIcon(data.notificationType);
+  
+  return `
+${notificationIcon} ${data.title}
+
+안녕하세요${data.recipientName ? ` ${data.recipientName}님` : ''},
+
+${data.content}
+
+${data.actionUrl ? `상세 보기: ${data.actionUrl}` : ''}
+
+---
+이 이메일은 Flowra 팀 관리 시스템에서 자동으로 발송되었습니다.
+© 2024 Flowra. All rights reserved.
+  `.trim();
+}
+
+/**
+ * 알림 타입별 아이콘 반환
+ */
+function getNotificationIcon(type: string): string {
+  switch (type) {
+    case 'task_assigned':
+      return '📝';
+    case 'task_due':
+      return '⏰';
+    case 'task_overdue':
+      return '🚨';
+    case 'task_completed':
+      return '✅';
+    case 'team_invitation':
+      return '👥';
+    case 'team_member_joined':
+      return '🎉';
+    default:
+      return '🔔';
+  }
 }
