@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateWithTeam, createErrorResponse, createSuccessResponse, hasPermission } from '@/lib/auth/middleware';
+import { notificationService } from '@/lib/services/notifications/notificationService';
 import { z } from 'zod';
 
 // 타입 정의
@@ -194,23 +195,18 @@ export async function POST(request: NextRequest) {
     // 담당자에게 알림 생성 (담당자가 지정된 경우)
     if (taskData.assignee_id && taskData.assignee_id !== user.id) {
       additionalTasks.push(
-        supabase
-          .from('notifications')
-          .insert({
-            user_id: taskData.assignee_id,
-            type: 'task_assigned',
-            title: '새로운 업무가 할당되었습니다',
-            content: `업무: ${taskData.title}`,
-            data: {
-              task_id: newTask.id,
-              task_title: taskData.title,
-              due_date: taskData.due_date,
-              priority: taskData.priority
-            }
-          })
-          .then(({ error }) => {
-            if (error) console.error('알림 생성 오류:', error);
-          })
+        notificationService.createTaskAssignedNotification(
+          taskData.assignee_id,
+          {
+            taskId: newTask.id,
+            taskTitle: taskData.title,
+            assignerName: user.name || user.email || '알 수 없음',
+            projectName: newTask.project?.name,
+            teamName: '현재 팀', // TODO: 팀 이름 가져오기
+          }
+        ).catch((error) => {
+          console.error('알림 생성 오류:', error);
+        })
       );
     }
 

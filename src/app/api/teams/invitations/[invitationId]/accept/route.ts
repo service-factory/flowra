@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticate, createErrorResponse, createSuccessResponse } from '@/lib/auth/middleware';
+import { notificationService } from '@/lib/services/notifications/notificationService';
 import { z } from 'zod';
 
 // 초대 수락 요청 스키마
@@ -168,6 +169,47 @@ export async function POST(
       console.error('❌ 초대 상태 업데이트 실패:', updateError);
       // 이미 멤버는 추가되었으므로 로그만 남기고 성공 처리
     }
+
+    // 팀 멤버 가입 알림 생성 (비동기)
+    Promise.resolve().then(async () => {
+      try {
+        // 팀의 다른 멤버들에게 새 멤버 가입 알림 전송
+        const { data: teamMembers } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .eq('team_id', invitation.team_id!)
+          .eq('is_active', true)
+          .neq('user_id', user.id); // 새로 가입한 사용자 제외
+
+        if (teamMembers && teamMembers.length > 0) {
+          const notifications = teamMembers
+            .filter(member => member.user_id) // null 제외
+            .map(member => ({
+              user_id: member.user_id!,
+              type: 'team_member_joined' as const,
+              title: `새로운 팀원이 가입했습니다`,
+              content: `${user.name || user.email}님이 "${invitation.teams?.name || '알 수 없는 팀'}" 팀에 가입했습니다.`,
+              data: {
+                team_id: invitation.team_id!,
+                team_name: invitation.teams?.name || '알 수 없는 팀',
+                new_member_name: user.name || user.email,
+                new_member_id: user.id,
+                role: newMember.role,
+              },
+              expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7일 후 만료
+            }));
+
+          if (notifications.length > 0) {
+            await notificationService.createNotificationBatch({
+              notifications,
+              send_immediately: true,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('팀 멤버 가입 알림 생성 오류:', error);
+      }
+    });
 
     return createSuccessResponse({
       message: `${invitation.teams?.name || '알 수 없는 팀'} 팀에 성공적으로 참여했습니다`,

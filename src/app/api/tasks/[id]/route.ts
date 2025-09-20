@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { authenticateWithTeam, createErrorResponse, createSuccessResponse } from '@/lib/auth/middleware';
+import { notificationService } from '@/lib/services/notifications/notificationService';
 import { taskUpdateSchema, taskStatusUpdateSchema } from '@/lib/validation/schemas';
 
 export async function PATCH(
@@ -93,6 +94,66 @@ export async function PATCH(
       console.error('업무 업데이트 오류:', updateError);
       return createErrorResponse('업무 업데이트에 실패했습니다', 500);
     }
+
+    // 업데이트 후 알림 생성 (비동기)
+    Promise.resolve().then(async () => {
+      try {
+        const { user } = authResult;
+        if (!user || !updatedTask) return;
+
+        // 담당자 변경 알림
+        if ('assignee_id' in validatedData && validatedData.assignee_id && 
+            validatedData.assignee_id !== user.id) {
+          await notificationService.createTaskAssignedNotification(
+            validatedData.assignee_id,
+            {
+              taskId: updatedTask.id,
+              taskTitle: updatedTask.title,
+              assignerName: user.name || user.email || '알 수 없음',
+              projectName: updatedTask.project?.name,
+              teamName: '현재 팀',
+            }
+          );
+        }
+
+        // 태스크 완료 알림
+        if ('status' in validatedData && validatedData.status === 'completed' && 
+            updatedTask.assignee && (updatedTask.assignee as any).id !== user.id) {
+          await notificationService.createTaskCompletedNotification(
+            (updatedTask.assignee as any).id,
+            {
+              taskId: updatedTask.id,
+              taskTitle: updatedTask.title,
+              projectName: (updatedTask.project as any)?.name,
+              teamName: '현재 팀',
+            }
+          );
+        }
+
+        // 마감일 변경 알림 (마감일이 임박한 경우)
+        if ('due_date' in validatedData && validatedData.due_date && 
+            updatedTask.assignee && (updatedTask.assignee as any).id !== user.id) {
+          const dueDate = new Date(validatedData.due_date);
+          const now = new Date();
+          const hoursUntilDue = (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursUntilDue <= 24 && hoursUntilDue > 0) {
+            await notificationService.createTaskDueNotification(
+              (updatedTask.assignee as any).id,
+              {
+                taskId: updatedTask.id,
+                taskTitle: updatedTask.title,
+                dueDate: validatedData.due_date,
+                projectName: (updatedTask.project as any)?.name,
+                teamName: '현재 팀',
+              }
+            );
+          }
+        }
+      } catch (error) {
+        console.error('알림 생성 오류:', error);
+      }
+    });
 
     return createSuccessResponse(updatedTask, '업무가 성공적으로 업데이트되었습니다');
   } catch (error) {
