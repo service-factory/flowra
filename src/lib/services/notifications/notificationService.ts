@@ -62,6 +62,11 @@ export class NotificationService {
         console.error('푸시 알림 발송 오류:', error);
       });
 
+      // Discord 알림 발송 (비동기)
+      this.sendDiscordNotification(data).catch(error => {
+        console.error('Discord 알림 발송 오류:', error);
+      });
+
       return data;
     } catch (error) {
       console.error('알림 생성 중 오류:', error);
@@ -405,10 +410,6 @@ export class NotificationService {
 
       // 이메일 알림이 비활성화된 경우 스킵
       if (preferences && preferences.email_enabled === false) {
-        console.log('이메일 알림이 비활성화됨:', {
-          userId: notification.user_id,
-          type: notification.type
-        });
         return;
       }
 
@@ -433,21 +434,6 @@ export class NotificationService {
 
       // 이메일 발송
       const result = await sendNotificationEmail(emailData);
-      
-      if (result.success) {
-        console.log('✅ 이메일 알림 발송 성공:', {
-          userId: notification.user_id,
-          type: notification.type,
-          messageId: result.messageId
-        });
-      } else {
-        console.error('❌ 이메일 알림 발송 실패:', {
-          userId: notification.user_id,
-          type: notification.type,
-          error: result.error
-        });
-      }
-
     } catch (error) {
       console.error('이메일 알림 발송 중 오류:', error);
     }
@@ -466,7 +452,6 @@ export class NotificationService {
         .eq('type', 'push_subscription');
 
       if (subscriptionError || !subscriptions || subscriptions.length === 0) {
-        console.log('푸시 구독이 없음:', notification.user_id);
         return;
       }
 
@@ -480,10 +465,6 @@ export class NotificationService {
 
       // 푸시 알림이 비활성화된 경우 스킵
       if (preferences && preferences.push_enabled === false) {
-        console.log('푸시 알림이 비활성화됨:', {
-          userId: notification.user_id,
-          type: notification.type
-        });
         return;
       }
 
@@ -545,21 +526,202 @@ export class NotificationService {
         })
       );
 
-      const successCount = results.filter(result => 
-        result.status === 'fulfilled' && result.value.success
-      ).length;
-
-      console.log('✅ 푸시 알림 발송 완료:', {
-        userId: notification.user_id,
-        type: notification.type,
-        total: subscriptions.length,
-        success: successCount,
-        failed: subscriptions.length - successCount
-      });
-
     } catch (error) {
       console.error('푸시 알림 발송 중 오류:', error);
     }
+  }
+
+  /**
+   * Discord 알림 발송
+   */
+  private async sendDiscordNotification(notification: any) {
+    try {
+      // Discord 알림 설정 확인
+      const { data: preferences } = await this.supabase
+        .from('notification_preferences')
+        .select('discord_enabled')
+        .eq('user_id', notification.user_id)
+        .eq('type', notification.type)
+        .single();
+
+      // Discord 알림이 비활성화된 경우 스킵
+      if (preferences && preferences.discord_enabled === false) {
+        return;
+      }
+
+      // 사용자의 팀 정보 조회
+      const { data: teamMember } = await this.supabase
+        .from('team_members')
+        .select(`
+          team_id,
+          teams!inner(
+            id,
+            discord_webhook_url,
+            discord_guild_id,
+            discord_channel_id
+          )
+        `)
+        .eq('user_id', notification.user_id)
+        .eq('is_active', true)
+        .single();
+
+      if (!teamMember?.teams?.discord_webhook_url) {
+        return;
+      }
+
+      // Discord 봇 서비스를 동적으로 import
+      const { getDiscordBotService } = await import('@/lib/services/discord/discordBotService');
+
+      // Discord 알림 데이터 생성
+      const discordNotification = {
+        title: this.getDiscordNotificationTitle(notification.type),
+        description: this.getDiscordNotificationDescription(notification),
+        color: this.getDiscordNotificationColor(notification.type),
+        fields: this.getDiscordNotificationFields(notification),
+      };
+
+      // Discord 알림 발송 (봇 방식)
+      const botService = getDiscordBotService();
+      if (botService) {
+        // 팀의 Discord 채널 ID 가져오기
+        const { data: teamData } = await this.supabase
+          .from('teams')
+          .select('discord_channel_id')
+          .eq('id', teamMember.teams.id)
+          .single();
+
+        if (teamData?.discord_channel_id) {
+          await botService.sendNotificationWithButtons(
+            teamData.discord_channel_id,
+            discordNotification,
+            notification.data?.task_id
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Discord 알림 발송 중 오류:', error);
+    }
+  }
+
+  /**
+   * Discord 알림 제목 생성
+   */
+  private getDiscordNotificationTitle(type: string): string {
+    const titles: Record<string, string> = {
+      task_assigned: '📋 새로운 업무 할당',
+      task_completed: '✅ 업무 완료',
+      task_due: '⏰ 마감일 알림',
+      task_updated: '📝 업무 업데이트',
+      team_invitation: '👥 팀 초대',
+      team_member_joined: '🎉 새로운 팀원',
+      team_member_left: '👋 팀원 탈퇴',
+    };
+    return titles[type] || '📢 알림';
+  }
+
+  /**
+   * Discord 알림 설명 생성
+   */
+  private getDiscordNotificationDescription(notification: any): string {
+    const data = notification.data || {};
+    
+    switch (notification.type) {
+      case 'task_assigned':
+        return `"${data.task_title || '제목 없음'}" 업무가 할당되었습니다.`;
+      case 'task_completed':
+        return `"${data.task_title || '제목 없음'}" 업무가 완료되었습니다.`;
+      case 'task_due':
+        return `"${data.task_title || '제목 없음'}" 업무의 마감일이 임박했습니다.`;
+      case 'task_updated':
+        return `"${data.task_title || '제목 없음'}" 업무가 업데이트되었습니다.`;
+      case 'team_invitation':
+        return `${data.team_name || '팀'}에 초대되었습니다.`;
+      case 'team_member_joined':
+        return `${data.member_name || '새로운 멤버'}님이 팀에 참여했습니다.`;
+      case 'team_member_left':
+        return `${data.member_name || '멤버'}님이 팀을 떠났습니다.`;
+      default:
+        return notification.content || notification.title;
+    }
+  }
+
+  /**
+   * Discord 알림 색상 생성
+   */
+  private getDiscordNotificationColor(type: string): number {
+    const colors: Record<string, number> = {
+      task_assigned: 0x3b82f6, // 파란색
+      task_completed: 0x10b981, // 초록색
+      task_due: 0xf59e0b, // 주황색
+      task_updated: 0x8b5cf6, // 보라색
+      team_invitation: 0x06b6d4, // 청록색
+      team_member_joined: 0x10b981, // 초록색
+      team_member_left: 0xef4444, // 빨간색
+    };
+    return colors[type] || 0x6b7280; // 기본 회색
+  }
+
+  /**
+   * Discord 알림 필드 생성
+   */
+  private getDiscordNotificationFields(notification: any): any[] {
+    const data = notification.data || {};
+    const fields: any[] = [];
+
+    switch (notification.type) {
+      case 'task_assigned':
+      case 'task_completed':
+      case 'task_updated':
+        if (data.task_id) {
+          fields.push({ name: '업무 ID', value: data.task_id, inline: true });
+        }
+        if (data.assignee_name) {
+          fields.push({ name: '담당자', value: data.assignee_name, inline: true });
+        }
+        if (data.due_date) {
+          fields.push({ name: '마감일', value: new Date(data.due_date).toLocaleDateString('ko-KR'), inline: true });
+        }
+        if (data.priority) {
+          fields.push({ name: '우선순위', value: data.priority, inline: true });
+        }
+        if (data.project_name) {
+          fields.push({ name: '프로젝트', value: data.project_name, inline: true });
+        }
+        break;
+
+      case 'task_due':
+        if (data.task_id) {
+          fields.push({ name: '업무 ID', value: data.task_id, inline: true });
+        }
+        if (data.assignee_name) {
+          fields.push({ name: '담당자', value: data.assignee_name, inline: true });
+        }
+        if (data.due_date) {
+          fields.push({ name: '마감일', value: new Date(data.due_date).toLocaleDateString('ko-KR'), inline: true });
+        }
+        break;
+
+      case 'team_invitation':
+        if (data.team_name) {
+          fields.push({ name: '팀명', value: data.team_name, inline: true });
+        }
+        if (data.inviter_name) {
+          fields.push({ name: '초대자', value: data.inviter_name, inline: true });
+        }
+        break;
+
+      case 'team_member_joined':
+      case 'team_member_left':
+        if (data.team_name) {
+          fields.push({ name: '팀명', value: data.team_name, inline: true });
+        }
+        if (data.member_role) {
+          fields.push({ name: '역할', value: data.member_role, inline: true });
+        }
+        break;
+    }
+
+    return fields;
   }
 }
 
