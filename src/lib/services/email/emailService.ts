@@ -318,13 +318,6 @@ export async function sendNotificationEmail(data: NotificationEmailData): Promis
 
     // 개발/테스트 환경에서는 콘솔에 이메일 내용 출력
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
-      console.log('📧 알림 이메일 발송 (개발 환경):', {
-        to: data.recipientEmail,
-        subject,
-        type: data.notificationType,
-        title: data.title,
-        content: data.content
-      });
       return {
         success: true,
         messageId: `dev-notification-${Date.now()}`
@@ -347,12 +340,6 @@ export async function sendNotificationEmail(data: NotificationEmailData): Promis
         error: result.error.message || '이메일 발송에 실패했습니다'
       };
     }
-
-    console.log('✅ 알림 이메일 발송 성공:', {
-      messageId: result.data?.id,
-      to: data.recipientEmail,
-      type: data.notificationType
-    });
 
     return {
       success: true,
