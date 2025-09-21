@@ -831,6 +831,7 @@ export type Database = {
           discord_bot_token_encrypted: string | null
           discord_channel_id: string | null
           discord_guild_id: string | null
+          discord_webhook_url: string | null
           id: string
           is_active: boolean | null
           name: string
@@ -845,6 +846,7 @@ export type Database = {
           discord_bot_token_encrypted?: string | null
           discord_channel_id?: string | null
           discord_guild_id?: string | null
+          discord_webhook_url?: string | null
           id?: string
           is_active?: boolean | null
           name: string
@@ -859,6 +861,7 @@ export type Database = {
           discord_bot_token_encrypted?: string | null
           discord_channel_id?: string | null
           discord_guild_id?: string | null
+          discord_webhook_url?: string | null
           id?: string
           is_active?: boolean | null
           name?: string
