@@ -5,6 +5,11 @@ import { AuthProvider } from "@/components/auth-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { ClientOnly } from "@/components/client-only";
 
+// Discord 스케줄러 자동 초기화 (서버 사이드에서만 실행)
+if (typeof window === 'undefined') {
+  import('@/lib/services/discord/discordSchedulerInit');
+}
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
