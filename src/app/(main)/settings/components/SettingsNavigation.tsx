@@ -48,7 +48,7 @@ const navigationItems: NavigationItem[] = [
     icon: Bell,
     href: '/settings/notifications',
     description: '알림 방법 및 설정'
-  }
+  },
 ];
 
 export function SettingsNavigation() {

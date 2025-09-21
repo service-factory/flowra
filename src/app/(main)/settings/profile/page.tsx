@@ -45,7 +45,6 @@ export default function ProfileSettingsPage() {
     setIsLoading(true);
     try {
       // TODO: API call to update profile
-      console.log('프로필 업데이트:', formData);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
       toast({

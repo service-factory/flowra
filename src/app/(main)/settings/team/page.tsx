@@ -62,7 +62,6 @@ export default function TeamSettingsPage() {
     setIsLoading(true);
     try {
       // TODO: API call to update team settings
-      console.log('팀 설정 업데이트:', settings);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
       toast({

@@ -59,7 +59,6 @@ export default function AppearanceSettingsPage() {
     setIsLoading(true);
     try {
       // TODO: API call to update appearance settings
-      console.log('외관 설정 업데이트:', settings);
       await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
       
       toast({
