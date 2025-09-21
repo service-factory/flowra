@@ -18,6 +18,7 @@ import {
   X,
   Filter as FilterIcon,
   Plus,
+  Bot,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -126,6 +127,7 @@ export function LeftNavigationBar({
     { id: "calendar", label: "캘린더", icon: Calendar, href: "/calendar" },
     { id: "tasks", label: "업무", icon: List, href: "/tasks" },
     { id: "team", label: "팀원", icon: Users, href: "/team" },
+    { id: "discord", label: "Discord", icon: Bot, href: "/discord" },
     { id: "settings", label: "설정", icon: Settings, href: "/settings" },
   ];
 

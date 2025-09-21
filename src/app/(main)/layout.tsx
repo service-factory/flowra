@@ -24,6 +24,7 @@ export default function MainLayout({
     if (pathname.includes('/calendar')) return 'calendar';
     if (pathname.includes('/team')) return 'team';
     if (pathname.includes('/settings')) return 'settings';
+    if (pathname.includes('/discord')) return 'discord';
     return 'dashboard';
   };
 
@@ -56,6 +57,11 @@ export default function MainLayout({
         return {
           title: '설정',
           subtitle: '계정 및 앱 설정'
+        };
+      case 'discord':
+        return {
+          title: 'Discord',
+          subtitle: 'Discord 연동'
         };
       default:
         return {

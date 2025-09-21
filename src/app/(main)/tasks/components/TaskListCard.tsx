@@ -96,7 +96,6 @@ export function TaskListCard({
     try {
       const taskUrl = `${window.location.origin}/tasks?id=${task.id}`;
       await navigator.clipboard.writeText(taskUrl);
-      console.log('링크가 클립보드에 복사되었습니다');
     } catch (error) {
       console.error('링크 복사 실패:', error);
     }

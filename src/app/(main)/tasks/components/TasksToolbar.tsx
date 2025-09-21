@@ -15,8 +15,12 @@ import {
   AlertTriangle,
   Clock,
   Zap,
-  Plus
+  Plus,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
+import { customFetch } from "@/lib/requests/customFetch";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TasksToolbarProps {
   searchTerm: string;
@@ -56,9 +60,41 @@ export function TasksToolbar({
   isLoading = false,
 }: TasksToolbarProps) {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [discordStatus, setDiscordStatus] = useState<{
+    connected: boolean;
+    loading: boolean;
+  }>({ connected: false, loading: true });
   
+  const { currentTeam } = useAuth();
   const hasQuickFilters = Boolean(assigneeFilter || dueFilter || priorityFilter);
   const activeFiltersCount = [assigneeFilter, dueFilter, priorityFilter].filter(Boolean).length;
+
+  // Discord 상태 확인
+  useEffect(() => {
+    const checkDiscordStatus = async () => {
+      if (!currentTeam?.id) {
+        setDiscordStatus({ connected: false, loading: false });
+        return;
+      }
+
+      try {
+        const response = await customFetch.getFetch<undefined, {
+          connected: boolean;
+          guild?: { name: string; icon?: string };
+        }>({ url: '/api/discord/status' });
+        
+        setDiscordStatus({
+          connected: response.connected,
+          loading: false
+        });
+      } catch (error) {
+        console.error('Discord 상태 확인 오류:', error);
+        setDiscordStatus({ connected: false, loading: false });
+      }
+    };
+
+    checkDiscordStatus();
+  }, [currentTeam?.id]);
 
   // 키보드 단축키 처리
   useEffect(() => {
@@ -143,6 +179,23 @@ export function TasksToolbar({
 
         {/* 액션 버튼들 */}
         <div className="flex items-center gap-2">
+          {/* Discord 상태 표시 */}
+          {!discordStatus.loading && (
+            <div className="hidden lg:flex items-center">
+              {discordStatus.connected ? (
+                <div className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                  <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+                  <span className="text-xs text-green-700 dark:text-green-300">Discord 연동됨</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-md">
+                  <AlertCircle className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                  <span className="text-xs text-orange-700 dark:text-orange-300">Discord 미연동</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 빠른 필터 버튼들 */}
           <div className="hidden lg:flex items-center gap-1">
             {quickFilterButtons.map((filter) => {
