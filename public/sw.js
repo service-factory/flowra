@@ -27,8 +27,6 @@ self.addEventListener('fetch', (event) => {
 
 // Push event - Handle incoming push notifications
 self.addEventListener('push', (event) => {
-  console.log('Push notification received:', event);
-
   let notificationData = {
     title: 'Flowra',
     body: '새로운 알림이 있습니다',
@@ -72,8 +70,6 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
-  console.log('Notification clicked:', event);
-
   event.notification.close();
 
   if (event.action === 'close') {
@@ -117,16 +113,11 @@ self.addEventListener('notificationclick', (event) => {
 
 // Background sync for offline notifications
 self.addEventListener('sync', (event) => {
-  console.log('Background sync:', event.tag);
-  
   if (event.tag === 'notification-sync') {
     event.waitUntil(
       // Sync notification data when back online
       fetch('/api/notifications/sync')
         .then(response => response.json())
-        .then(data => {
-          console.log('Notifications synced:', data);
-        })
         .catch(error => {
           console.error('Sync failed:', error);
         })
@@ -136,8 +127,6 @@ self.addEventListener('sync', (event) => {
 
 // Message event for communication with main thread
 self.addEventListener('message', (event) => {
-  console.log('Service Worker received message:', event.data);
-  
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }

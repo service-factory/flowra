@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   },
   
   // 개발 모드 최적화
-  webpack: (config, { dev }) => {
+  webpack: (config, { dev, isServer }) => {
     if (dev) {
       // 파일 시스템 감시 최적화 - ENOENT 에러 방지
       config.watchOptions = {
@@ -43,6 +43,30 @@ const nextConfig: NextConfig = {
           },
         },
       };
+    }
+
+    // Discord.js 관련 패키지들을 서버 사이드에서만 사용하도록 설정
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        stream: false,
+        util: false,
+        buffer: false,
+        events: false,
+      };
+
+      // Discord.js 관련 패키지들을 외부로 처리
+      config.externals = config.externals || [];
+      config.externals.push({
+        'discord.js': 'commonjs discord.js',
+        '@discordjs/rest': 'commonjs @discordjs/rest',
+        'discord-api-types': 'commonjs discord-api-types',
+        'zlib-sync': 'commonjs zlib-sync',
+      });
     }
     
     return config;
