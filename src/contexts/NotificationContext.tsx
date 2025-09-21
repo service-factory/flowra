@@ -55,7 +55,6 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
 
   // 새 알림 수신 콜백
   const handleNewNotification = useCallback((notification: Notification) => {
-    console.log('🆕 새 알림 수신:', notification);
     showToast(notification);
   }, [showToast]);
 

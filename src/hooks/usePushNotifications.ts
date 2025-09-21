@@ -33,7 +33,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.register('/sw.js')
         .then((registration) => {
-          console.log('Service Worker 등록 성공:', registration);
           setState(prev => ({ ...prev, isSupported: true }));
         })
         .catch((error) => {

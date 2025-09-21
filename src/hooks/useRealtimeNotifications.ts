@@ -77,8 +77,6 @@ export function useRealtimeNotifications({
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('🆕 새로운 알림 수신:', payload);
-          
           const newNotification = payload.new as Notification;
           
           // 캐시 업데이트
@@ -108,8 +106,6 @@ export function useRealtimeNotifications({
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('📝 알림 업데이트:', payload);
-          
           const updatedNotification = payload.new as Notification;
           
           // 캐시 업데이트
@@ -147,8 +143,6 @@ export function useRealtimeNotifications({
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log('🗑️ 알림 삭제:', payload);
-          
           const deletedNotification = payload.old as Notification;
           
           // 캐시 업데이트
