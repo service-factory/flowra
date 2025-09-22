@@ -40,12 +40,11 @@ export function DiscordOnboarding({ onClose, showSkip = true }: DiscordOnboardin
 
       try {
         const response = await customFetch.getFetch<undefined, {
-          connected: boolean;
-          guild?: { name: string; icon?: string };
-        }>({ url: '/api/discord/status' });
+          data?: { connected: boolean; guild?: { name: string; icon?: string } };
+        }>({ url: `/api/discord/status?teamId=${currentTeam.id}` });
         
         setDiscordStatus({
-          connected: response.connected,
+          connected: Boolean(response.data?.connected),
           loading: false
         });
       } catch (error) {
