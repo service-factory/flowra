@@ -34,6 +34,7 @@ CREATE TABLE users (
   email_verified BOOLEAN DEFAULT true, -- OAuth로 로그인하면 이메일이 검증됨
   is_active BOOLEAN DEFAULT true,
   last_login_at TIMESTAMP WITH TIME ZONE,
+  preferences JSONB DEFAULT '{}', -- 사용자 개인 설정
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(provider, provider_id) -- 같은 provider에서 중복 방지
@@ -85,6 +86,7 @@ CREATE TABLE teams (
   discord_bot_token_encrypted TEXT,
   settings JSONB DEFAULT '{}',
   is_active BOOLEAN DEFAULT true,
+  member_count INTEGER DEFAULT 0, -- 팀원 수 (성능 최적화용)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -184,8 +186,9 @@ CREATE TABLE tasks (
   completed_at TIMESTAMP WITH TIME ZONE,
   estimated_hours DECIMAL(5,2),
   actual_hours DECIMAL(5,2),
-  position INTEGER DEFAULT 0, -- 정렬 순서
+  position INTEGER DEFAULT 0, -- 정렬 순서 (칸반 보드용)
   metadata JSONB DEFAULT '{}',
+  is_archived BOOLEAN DEFAULT false, -- 아카이브 여부
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

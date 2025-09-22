@@ -95,16 +95,67 @@ interface LogoutResponse {
 // GET /api/auth/me
 interface MeResponse {
   user: User;
-  team: Team;
+  teams: Team[];
+  currentTeam?: Team;
   permissions: Permission[];
   provider: 'kakao' | 'google';
 }
 ```
 
-### 3.2 업무 관리 API
+### 3.2 팀 관리 API
+```typescript
+// GET /api/teams
+interface GetTeamsResponse {
+  teams: Team[];
+  total: number;
+}
+
+// POST /api/teams
+interface CreateTeamRequest {
+  name: string;
+  description?: string;
+  slug?: string;
+}
+
+// GET /api/teams/[teamId]
+interface GetTeamResponse {
+  team: Team;
+  members: TeamMember[];
+  stats: TeamStats;
+}
+
+// PUT /api/teams/[teamId]
+interface UpdateTeamRequest {
+  name?: string;
+  description?: string;
+  settings?: Record<string, any>;
+}
+
+// POST /api/teams/[teamId]/invite
+interface InviteMemberRequest {
+  email: string;
+  role: TeamRole;
+}
+
+// GET /api/teams/invitations/[invitationId]
+interface GetInvitationResponse {
+  invitation: TeamInvitation;
+  team: Team;
+}
+
+// POST /api/teams/invitations/[invitationId]/accept
+interface AcceptInvitationResponse {
+  success: boolean;
+  team: Team;
+  member: TeamMember;
+}
+```
+
+### 3.3 업무 관리 API
 ```typescript
 // GET /api/tasks
 interface GetTasksRequest {
+  teamId: string;
   page?: number;
   limit?: number;
   status?: TaskStatus[];
@@ -113,6 +164,7 @@ interface GetTasksRequest {
   dueDateFrom?: string;
   dueDateTo?: string;
   search?: string;
+  projectId?: string;
 }
 
 interface GetTasksResponse {
@@ -127,13 +179,15 @@ interface GetTasksResponse {
 
 // POST /api/tasks
 interface CreateTaskRequest {
+  teamId: string;
+  projectId?: string;
   title: string;
   description: string;
   assigneeId: string;
   dueDate: string;
   priority: Priority;
   tags: string[];
-  projectId?: string;
+  dependencies?: string[];
 }
 
 // PUT /api/tasks/[id]
@@ -145,6 +199,7 @@ interface UpdateTaskRequest {
   priority?: Priority;
   status?: TaskStatus;
   tags?: string[];
+  dependencies?: string[];
 }
 
 // PATCH /api/tasks/[id]/status
@@ -152,30 +207,46 @@ interface UpdateTaskStatusRequest {
   status: TaskStatus;
   comment?: string;
 }
+
+// PATCH /api/tasks/[id]/move
+interface MoveTaskRequest {
+  newStatus: TaskStatus;
+  position?: number;
+}
 ```
 
-### 3.3 팀 관리 API
+### 3.4 프로젝트 관리 API
 ```typescript
-// GET /api/team/members
-interface GetTeamMembersResponse {
-  members: TeamMember[];
+// GET /api/projects
+interface GetProjectsRequest {
+  teamId: string;
+}
+
+interface GetProjectsResponse {
+  projects: Project[];
   total: number;
 }
 
-// POST /api/team/members
-interface InviteMemberRequest {
-  email: string;
-  role: TeamRole;
+// POST /api/projects
+interface CreateProjectRequest {
+  teamId: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
 }
 
-// PUT /api/team/members/[id]
-interface UpdateMemberRequest {
-  role?: TeamRole;
+// PUT /api/projects/[id]
+interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+  color?: string;
+  icon?: string;
   isActive?: boolean;
 }
 ```
 
-### 3.4 알림 API
+### 3.5 알림 API
 ```typescript
 // GET /api/notifications
 interface GetNotificationsRequest {
@@ -190,7 +261,7 @@ interface MarkReadRequest {
 }
 ```
 
-### 3.5 디스코드 연동 API
+### 3.6 디스코드 연동 API
 ```typescript
 // POST /api/discord/connect
 interface ConnectDiscordRequest {
