@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
   ChevronLeft, 
@@ -8,48 +9,32 @@ import {
   List, 
   Clock,
 } from "lucide-react";
+import { ViewMode } from '../types/calendar';
+import { formatDateTitle } from '../utils/calendarUtils';
+import { CalendarHeaderSkeleton } from './CalendarLoadingSkeleton';
 
 interface CalendarHeaderProps {
   currentDate: Date;
-  viewMode: "month" | "week" | "day";
-  onViewModeChange: (mode: "month" | "week" | "day") => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
   onNavigate: (direction: "prev" | "next") => void;
   onGoToToday: () => void;
-  onTaskCreate: (newTask: any) => void;
   openTaskCreateModal?: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
+  isLoading?: boolean;
 }
 
-export function CalendarHeader({
+export const CalendarHeader = memo(function CalendarHeader({
   currentDate,
   viewMode,
   onViewModeChange,
   onNavigate,
   onGoToToday,
-  openTaskCreateModal
+  openTaskCreateModal,
+  isLoading = false
 }: CalendarHeaderProps) {
-  const formatDateTitle = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-    
-    switch (viewMode) {
-      case "month":
-        return `${year}년 ${month}월`;
-      case "week":
-        const startOfWeek = new Date(currentDate);
-        const day = startOfWeek.getDay();
-        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-        startOfWeek.setDate(diff);
-        
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
-        return `${startOfWeek.getMonth() + 1}/${startOfWeek.getDate()} - ${endOfWeek.getMonth() + 1}/${endOfWeek.getDate()}`;
-      case "day":
-        return `${year}년 ${month}월 ${currentDate.getDate()}일`;
-      default:
-        return "";
-    }
-  };
+  if (isLoading) {
+    return <CalendarHeaderSkeleton />;
+  }
 
   return (
     <div className="flex items-center justify-between py-4">
@@ -86,7 +71,7 @@ export function CalendarHeader({
 
         {/* 현재 날짜 표시 */}
         <div className="text-lg font-semibold text-gray-900 dark:text-white">
-          {formatDateTitle()}
+          {formatDateTitle(currentDate, viewMode)}
         </div>
       </div>
 
@@ -134,4 +119,4 @@ export function CalendarHeader({
       </div>
     </div>
   );
-}
+});

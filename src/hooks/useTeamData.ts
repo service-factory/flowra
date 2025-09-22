@@ -65,12 +65,13 @@ export function useTeamData(teamId: string | null) {
       return result;
     },
     enabled: !!teamId,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5분간 데이터 신선도 유지
+    gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    refetchOnMount: false, // 마운트 시 자동 리페치 비활성화
+    refetchOnReconnect: true, // 네트워크 재연결 시 리페치
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000)
   });
 
   return query;

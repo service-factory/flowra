@@ -1,121 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from 'react';
 import { Calendar as CalendarIcon, Plus } from "lucide-react";
-import { DndContext, useDraggable, useDroppable } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
-
+import { DndContext, useDroppable } from "@dnd-kit/core";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Task } from "@/types";
+import { CalendarTask, ViewMode, TasksByDate } from '../types/calendar';
+import { DraggableTaskCard } from './DraggableTaskCard';
+import { getPriorityIcon, getStatusText } from '../utils/calendarUtils';
+import { 
+  CalendarGridSkeleton, 
+  CalendarWeekSkeleton, 
+  CalendarDaySkeleton 
+} from './CalendarLoadingSkeleton';
 
 interface CalendarViewProps {
   currentDate: Date;
-  viewMode: "month" | "week" | "day";
-  tasksByDate: { [key: string]: Task[] };
-  onTaskClick: (task: Task) => void;
+  viewMode: ViewMode;
+  tasksByDate: TasksByDate;
+  onTaskClick: (task: CalendarTask) => void;
   onTaskMove: (taskId: string, newDueDate: string) => void;
-  getStatusText: (status: string) => string;
-  getPriorityIcon: (priority: string) => string;
   openTaskCreateModal?: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
+  isLoading?: boolean;
+  isRefreshing?: boolean;
 }
 
-// 드래그 가능한 Task 카드 컴포넌트 (구글 캘린더 스타일)
-function DraggableTaskCard({ 
-  task, 
-  onTaskClick, 
-  getPriorityIcon,
-  isCompact = false
-}: { 
-  task: Task; 
-  onTaskClick: (task: Task) => void; 
-  getPriorityIcon: (priority: string) => string;
-  isCompact?: boolean;
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-  });
-
-  const style = {
-    transform: CSS.Translate.toString(transform),
-  };
-
-  // 구글 캘린더 스타일의 색상 매핑
-  const getGoogleCalendarColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800 border-l-4 border-green-500";
-      case "in_progress": return "bg-blue-100 text-blue-800 border-l-4 border-blue-500";
-      case "pending": return "bg-gray-100 text-gray-800 border-l-4 border-gray-400";
-      case "overdue": return "bg-red-100 text-red-800 border-l-4 border-red-500";
-      default: return "bg-gray-100 text-gray-800 border-l-4 border-gray-400";
-    }
-  };
-
-  if (isCompact) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={`text-xs p-1 rounded cursor-pointer hover:shadow-sm transition-all duration-200 ${getGoogleCalendarColor(task.status)} ${
-          isDragging ? 'opacity-50' : ''
-        } relative`}
-      >
-        {/* 드래그 핸들 */}
-        <div
-          {...listeners}
-          {...attributes}
-          className="absolute top-0 left-0 w-2 h-full cursor-move bg-gray-400 opacity-0 hover:opacity-50 transition-opacity"
-        />
-        
-        {/* 클릭 가능한 콘텐츠 영역 */}
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onTaskClick(task);
-          }}
-          className="flex items-center space-x-1 pl-2"
-        >
-          <span className="text-xs">{getPriorityIcon(task.priority)}</span>
-          <span className="truncate font-medium text-xs">{task.title}</span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`text-xs p-1.5 rounded cursor-pointer hover:shadow-sm transition-all duration-200 ${getGoogleCalendarColor(task.status)} ${
-        isDragging ? 'opacity-50' : ''
-      } relative`}
-    >
-      {/* 드래그 핸들 */}
-      <div
-        {...listeners}
-        {...attributes}
-        className="absolute top-0 left-0 w-3 h-full cursor-move bg-gray-400 opacity-0 hover:opacity-50 transition-opacity"
-      />
-      
-      {/* 클릭 가능한 콘텐츠 영역 */}
-      <div
-        onClick={(e) => {
-          e.stopPropagation();
-          onTaskClick(task);
-        }}
-        className="pl-3"
-      >
-        <div className="flex items-center space-x-1 mb-0.5">
-          <span className="text-xs">{getPriorityIcon(task.priority)}</span>
-          <span className="truncate font-medium text-xs">{task.title}</span>
-        </div>
-        <div className="text-xs opacity-75 truncate">
-          {task.assignee?.name || "미할당"}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // 드롭 가능한 날짜 셀 컴포넌트 (구글 캘린더 스타일)
 function DroppableDateCell({ 
@@ -125,16 +34,14 @@ function DroppableDateCell({
   isTodayDate, 
   dayTasks, 
   onTaskClick, 
-  getPriorityIcon,
   openTaskCreateModal
 }: {
   date: Date;
   dateKey: string;
   isCurrentMonth: boolean;
   isTodayDate: boolean;
-  dayTasks: Task[];
-  onTaskClick: (task: Task) => void;
-  getPriorityIcon: (priority: string) => string;
+  dayTasks: CalendarTask[];
+  onTaskClick: (task: CalendarTask) => void;
   openTaskCreateModal?: (opts?: { initialStatus?: string; initialDueDate?: string }) => void;
 }) {
   const { isOver, setNodeRef } = useDroppable({
@@ -185,7 +92,6 @@ function DroppableDateCell({
             key={task.id}
             task={task}
             onTaskClick={onTaskClick}
-            getPriorityIcon={getPriorityIcon}
             isCompact={true}
           />
         ))}
@@ -214,15 +120,15 @@ function DroppableDateCell({
   );
 }
 
-export function CalendarView({
+export const CalendarView = memo(function CalendarView({
   currentDate,
   viewMode,
   tasksByDate,
   onTaskClick,
   onTaskMove,
-  getStatusText,
-  getPriorityIcon,
   openTaskCreateModal,
+  isLoading = false,
+  isRefreshing = false,
 }: CalendarViewProps) {
   const isToday = (date: Date) => {
     const today = new Date();
@@ -334,7 +240,6 @@ export function CalendarView({
                   isTodayDate={isTodayDate}
                   dayTasks={dayTasks}
                   onTaskClick={onTaskClick}
-                  getPriorityIcon={getPriorityIcon}
                   openTaskCreateModal={openTaskCreateModal}
                 />
               );
@@ -402,36 +307,12 @@ export function CalendarView({
                 {/* 태스크 목록 - 구글 캘린더 스타일 */}
                 <div className="flex-1 space-y-1 overflow-y-auto">
                   {dayTasks.map((task) => (
-                    <div
+                    <DraggableTaskCard
                       key={task.id}
-                      onClick={(e) => {
-          e.stopPropagation();
-          onTaskClick(task);
-        }}
-                      className={`text-xs p-1.5 rounded cursor-pointer hover:shadow-sm transition-all duration-200 ${
-                        task.status === "completed" ? "bg-green-100 text-green-800 border-l-4 border-green-500" :
-                        task.status === "in_progress" ? "bg-blue-100 text-blue-800 border-l-4 border-blue-500" :
-                        task.status === "pending" ? "bg-gray-100 text-gray-800 border-l-4 border-gray-400" :
-                        "bg-red-100 text-red-800 border-l-4 border-red-500"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-1 mb-0.5">
-                        <span className="text-xs">{getPriorityIcon(task.priority)}</span>
-                        <span className="font-medium truncate text-xs">{task.title}</span>
-                      </div>
-                      <div className="text-xs opacity-75 truncate">
-                        {task.assignee?.name || "미할당"}
-                      </div>
-                      {task.tags && task.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-0.5 mt-1">
-                          {task.tags.slice(0, 2).map((tag) => (
-                            <Badge key={typeof tag === 'string' ? tag : tag.id} variant="secondary" className="text-xs px-1 py-0 h-4">
-                              {typeof tag === 'string' ? tag : tag.tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                      task={task}
+                      onTaskClick={onTaskClick}
+                      isCompact={true}
+                    />
                   ))}
                 </div>
               </div>
@@ -560,11 +441,29 @@ export function CalendarView({
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col">
+        {viewMode === "month" && <CalendarGridSkeleton />}
+        {viewMode === "week" && <CalendarWeekSkeleton />}
+        {viewMode === "day" && <CalendarDaySkeleton />}
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
+      {isRefreshing && (
+        <div className="absolute top-2 right-2 z-10">
+          <div className="bg-blue-500 text-white px-2 py-1 rounded-md text-xs flex items-center space-x-1">
+            <div className="animate-spin h-3 w-3 border border-white border-t-transparent rounded-full"></div>
+            <span>새로고침 중...</span>
+          </div>
+        </div>
+      )}
       {viewMode === "month" && renderMonthView()}
       {viewMode === "week" && renderWeekView()}
       {viewMode === "day" && renderDayView()}
     </div>
   );
-}
+});
