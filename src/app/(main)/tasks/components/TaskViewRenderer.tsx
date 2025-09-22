@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Target } from "lucide-react";
 import { KanbanBoard } from "./KanbanBoard";
 import { TaskListCard } from "./TaskListCard";
@@ -6,6 +7,7 @@ import { getTagColor, getStatusColor, getStatusText, getPriorityColor } from "@/
 import { PriorityIcon } from "@/components/ui/priority-icon";
 import { kanbanColumns } from "@/lib/constants/kanbanColumns";
 import type { ViewMode } from "@/hooks/useViewMode";
+import { KanbanBoardSkeleton, TaskListSkeleton } from './TasksLoadingSkeleton';
 
 interface TaskViewRendererProps {
   viewMode: ViewMode;
@@ -20,7 +22,7 @@ interface TaskViewRendererProps {
   onTaskStatusUpdate?: (taskId: string, status: string) => Promise<void>;
 }
 
-export function TaskViewRenderer({
+export const TaskViewRenderer = memo(function TaskViewRenderer({
   viewMode,
   filteredTasks,
   isLoading,
@@ -32,7 +34,15 @@ export function TaskViewRenderer({
   onTaskDelete,
   onTaskStatusUpdate,
 }: TaskViewRendererProps) {
-  // no-op
+  if (isLoading) {
+    if (viewMode === "kanban") {
+      return <KanbanBoardSkeleton />;
+    }
+    if (viewMode === "list") {
+      return <TaskListSkeleton />;
+    }
+    return <TaskListSkeleton />;
+  }
 
   if (viewMode === "kanban") {
     return (
@@ -110,4 +120,4 @@ export function TaskViewRenderer({
 
 
   return null;
-}
+});

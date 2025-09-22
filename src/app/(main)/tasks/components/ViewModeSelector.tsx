@@ -1,20 +1,28 @@
+import { memo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Kanban, List, SortAsc, ChevronDown } from "lucide-react";
 import type { ViewMode } from "@/hooks/useViewMode";
+import { ViewModeSelectorSkeleton } from './TasksLoadingSkeleton';
 
 interface ViewModeSelectorProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   filteredTasksCount: number;
   selectedTagsCount: number;
+  isLoading?: boolean;
 }
 
-export function ViewModeSelector({
+export const ViewModeSelector = memo(function ViewModeSelector({
   viewMode,
   onViewModeChange,
   filteredTasksCount,
   selectedTagsCount,
+  isLoading = false,
 }: ViewModeSelectorProps) {
+  if (isLoading) {
+    return <ViewModeSelectorSkeleton />;
+  }
+
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center space-x-3">
@@ -71,4 +79,4 @@ export function ViewModeSelector({
       </div>
     </div>
   );
-}
+});

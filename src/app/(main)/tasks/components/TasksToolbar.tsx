@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { customFetch } from "@/lib/requests/customFetch";
 import { useAuth } from "@/hooks/useAuth";
+import { TasksToolbarSkeleton } from './TasksLoadingSkeleton';
 
 interface TasksToolbarProps {
   searchTerm: string;
@@ -41,7 +42,7 @@ interface TasksToolbarProps {
   isLoading?: boolean;
 }
 
-export function TasksToolbar({
+export const TasksToolbar = memo(function TasksToolbar({
   searchTerm,
   onChangeSearch,
   showCompleted,
@@ -109,6 +110,10 @@ export function TasksToolbar({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  if (isLoading) {
+    return <TasksToolbarSkeleton />;
+  }
 
   const quickFilterButtons = [
     {
@@ -442,6 +447,6 @@ export function TasksToolbar({
       </div>
     </div>
   );
-}
+});
 
 
