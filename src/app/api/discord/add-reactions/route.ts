@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { createSuccessResponse, createErrorResponse } from '@/lib/auth/middleware';
-import { createServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
 const reactionSchema = z.object({

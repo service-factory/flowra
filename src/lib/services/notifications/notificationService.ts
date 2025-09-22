@@ -433,7 +433,7 @@ export class NotificationService {
       };
 
       // 이메일 발송
-      const result = await sendNotificationEmail(emailData);
+      await sendNotificationEmail(emailData);
     } catch (error) {
       console.error('이메일 알림 발송 중 오류:', error);
     }
@@ -504,7 +504,7 @@ export class NotificationService {
       });
 
       // 모든 구독에 푸시 알림 발송
-      const results = await Promise.allSettled(
+      await Promise.allSettled(
         subscriptions.map(async (subscription) => {
           try {
             const { endpoint, keys } = subscription.data as any;

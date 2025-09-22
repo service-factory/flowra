@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createSuccessResponse, createErrorResponse, authenticateWithTeam } from '@/lib/auth/middleware';
 import { createServiceClient } from '@/lib/supabase/server';
-import { getDiscordBotService, initializeDiscordBot } from '@/lib/services/discord/discordBotService';
+import { initializeDiscordBot } from '@/lib/services/discord/discordBotService';
 import { z } from 'zod';
 
 const botStatusSchema = z.object({

@@ -167,8 +167,7 @@ export class DiscordBotService {
       const subcommand = interaction.options.getSubcommand();
       const taskId = interaction.options.getString('taskid', true);
 
-      // 사용자 ID와 팀 ID 추출
-      const discordUserId = interaction.user.id;
+      // 팀 ID 추출
       const guildId = interaction.guildId;
 
       if (!guildId) {
@@ -189,7 +188,7 @@ export class DiscordBotService {
         return;
       }
 
-      const userId = await this.getUserIdFromDiscord(discordUserId, team.id);
+      const userId = await this.getUserIdFromDiscord();
 
       switch (subcommand) {
         case 'complete':
@@ -242,7 +241,7 @@ export class DiscordBotService {
         return;
       }
 
-      const userId = await this.getUserIdFromDiscord(interaction.user.id, team.id);
+      const userId = await this.getUserIdFromDiscord();
 
       switch (action) {
         case 'complete':
@@ -275,7 +274,7 @@ export class DiscordBotService {
       } else {
         await interaction.reply({ content: `❌ ${result.message}`, ephemeral: true });
       }
-    } catch (error) {
+    } catch {
       await interaction.reply({ content: '❌ 업무 완료 처리 중 오류가 발생했습니다.', ephemeral: true });
     }
   }
@@ -292,7 +291,7 @@ export class DiscordBotService {
       } else {
         await interaction.reply({ content: `❌ ${result.message}`, ephemeral: true });
       }
-    } catch (error) {
+    } catch {
       await interaction.reply({ content: '❌ 업무 연장 처리 중 오류가 발생했습니다.', ephemeral: true });
     }
   }
@@ -319,7 +318,7 @@ export class DiscordBotService {
       } else {
         await interaction.reply({ content: `❌ ${result.message}`, ephemeral: true });
       }
-    } catch (error) {
+    } catch {
       await interaction.reply({ content: '❌ 업무 조회 중 오류가 발생했습니다.', ephemeral: true });
     }
   }
@@ -336,7 +335,7 @@ export class DiscordBotService {
       } else {
         await interaction.reply({ content: `❌ ${result.message}`, ephemeral: true });
       }
-    } catch (error) {
+    } catch {
       await interaction.reply({ content: '❌ 업무 완료 처리 중 오류가 발생했습니다.', ephemeral: true });
     }
   }
@@ -353,7 +352,7 @@ export class DiscordBotService {
       } else {
         await interaction.reply({ content: `❌ ${result.message}`, ephemeral: true });
       }
-    } catch (error) {
+    } catch {
       await interaction.reply({ content: '❌ 업무 연장 처리 중 오류가 발생했습니다.', ephemeral: true });
     }
   }
@@ -380,7 +379,7 @@ export class DiscordBotService {
       } else {
         await interaction.reply({ content: `❌ ${result.message}`, ephemeral: true });
       }
-    } catch (error) {
+    } catch {
       await interaction.reply({ content: '❌ 업무 조회 중 오류가 발생했습니다.', ephemeral: true });
     }
   }
@@ -414,7 +413,7 @@ export class DiscordBotService {
   /**
    * Discord 사용자 ID를 실제 사용자 ID로 매핑
    */
-  private async getUserIdFromDiscord(discordUserId: string, teamId: string): Promise<string> {
+  private async getUserIdFromDiscord(): Promise<string> {
     // TODO: Discord 사용자 ID와 실제 사용자 ID 매핑 로직 구현
     // 현재는 테스트용으로 더미 사용자 ID 반환
     return 'c9a67131-fedd-4620-b7be-cf7a40f8b2ca';

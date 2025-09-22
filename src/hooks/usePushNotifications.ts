@@ -32,7 +32,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   useEffect(() => {
     if ('serviceWorker' in navigator && 'PushManager' in window) {
       navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
+        .then(() => {
           setState(prev => ({ ...prev, isSupported: true }));
         })
         .catch((error) => {

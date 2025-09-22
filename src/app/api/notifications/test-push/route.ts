@@ -4,15 +4,18 @@ import webpush from 'web-push';
 
 // VAPID 키 설정
 const vapidKeys = {
-  publicKey: process.env.NEXT_PUBLIC_VAPID_KEY!,
-  privateKey: process.env.VAPID_PRIVATE_KEY!,
+  publicKey: process.env.NEXT_PUBLIC_VAPID_KEY || 'dummy-public-key',
+  privateKey: process.env.VAPID_PRIVATE_KEY || 'dummy-private-key',
 };
 
-webpush.setVapidDetails(
-  'mailto:your-email@example.com',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+// VAPID 키가 설정된 경우에만 webpush 설정
+if (process.env.NEXT_PUBLIC_VAPID_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:your-email@example.com',
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
