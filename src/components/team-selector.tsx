@@ -135,22 +135,21 @@ export function TeamSelector({
 
   if (isLoading) {
     return (
-      <div className={`space-y-4 ${className}`}>
+      <div className={`space-y-3 ${className}`}>
         <div className="text-center">
-          <Skeleton className="h-8 w-48 mx-auto mb-2" />
-          <Skeleton className="h-4 w-64 mx-auto" />
+          <Skeleton className="h-6 w-40 mx-auto mb-2" />
+          <Skeleton className="h-3.5 w-56 mx-auto" />
         </div>
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="p-6">
-              <div className="flex items-center space-x-4">
-                <Skeleton className="w-12 h-12 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-4 w-20" />
+            <Card key={i} className="p-4">
+              <div className="flex items-center space-x-3">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-3.5 w-40" />
                 </div>
-                <Skeleton className="h-8 w-20" />
+                <Skeleton className="h-7 w-16" />
               </div>
             </Card>
           ))}
@@ -172,7 +171,7 @@ export function TeamSelector({
 
   if (teams.length === 0) {
     return (
-      <div className={`text-center py-12 ${className}`}>
+      <div className={`text-center py-10 ${className}`}>
         <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
           <Users className="w-8 h-8 text-gray-400" />
         </div>
@@ -211,7 +210,7 @@ export function TeamSelector({
         </p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-3">
         {teams.map((team) => (
           <Card 
             key={team.id} 
@@ -222,10 +221,10 @@ export function TeamSelector({
             }`}
             onClick={() => handleTeamSelect(team.id)}
           >
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="w-12 h-12">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="w-10 h-10">
                     <AvatarImage src={`/api/placeholder/48/48`} />
                     <AvatarFallback className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold">
                       {team.name.charAt(0).toUpperCase()}
@@ -233,29 +232,29 @@ export function TeamSelector({
                   </Avatar>
                   
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <div className="flex items-center space-x-2 mb-0.5">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                         {team.name}
                       </h3>
-                      <Badge variant="secondary" className={getRoleColor(team.role)}>
+                      <Badge variant="secondary" className={`${getRoleColor(team.role)} px-1.5 py-0.5 text-[11px]`}>
                         {getRoleIcon(team.role)}
                         <span className="ml-1">{getRoleText(team.role)}</span>
                       </Badge>
                     </div>
                     
                     {team.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1 truncate max-w-[520px]">
                         {team.description}
                       </p>
                     )}
                     
-                    <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex items-center space-x-1">
-                        <Users className="w-4 h-4" />
+                        <Users className="w-3.5 h-3.5" />
                         <span>{team.member_count}명</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4" />
+                        <Calendar className="w-3.5 h-3.5" />
                         <span>{new Date(team.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
@@ -264,9 +263,9 @@ export function TeamSelector({
                 
                 <div className="flex items-center space-x-2">
                   {selectedTeamId === team.id && (
-                    <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
-                      <span className="text-sm font-medium">선택됨</span>
-                      <ArrowRight className="w-4 h-4" />
+                    <div className="flex items-center space-x-1.5 text-blue-600 dark:text-blue-400">
+                      <span className="text-xs font-medium">선택됨</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   )}
                 </div>
