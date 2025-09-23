@@ -414,11 +414,13 @@ export class NotificationService {
       }
 
       // 액션 URL 생성
+      const { getAppBaseUrl } = await import('@/lib/utils');
+      const baseUrl = getAppBaseUrl();
       let actionUrl: string | undefined;
       if (notification.data?.task_id) {
-        actionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/tasks?taskId=${notification.data.task_id}`;
+        actionUrl = `${baseUrl}/tasks?taskId=${notification.data.task_id}`;
       } else if (notification.data?.team_id) {
-        actionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/team?teamId=${notification.data.team_id}`;
+        actionUrl = `${baseUrl}/team?teamId=${notification.data.team_id}`;
       }
 
       // 이메일 데이터 준비
@@ -469,11 +471,13 @@ export class NotificationService {
       }
 
       // 액션 URL 생성
+      const { getAppBaseUrl } = await import('@/lib/utils');
+      const baseUrl = getAppBaseUrl();
       let actionUrl: string | undefined;
       if (notification.data?.task_id) {
-        actionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/tasks?taskId=${notification.data.task_id}`;
+        actionUrl = `${baseUrl}/tasks?taskId=${notification.data.task_id}`;
       } else if (notification.data?.team_id) {
-        actionUrl = `${process.env.NEXT_PUBLIC_APP_URL}/team?teamId=${notification.data.team_id}`;
+        actionUrl = `${baseUrl}/team?teamId=${notification.data.team_id}`;
       }
 
       // 푸시 알림 페이로드 생성

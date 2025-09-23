@@ -70,7 +70,8 @@ export async function POST(
     }
 
     // 초대 URL 생성
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const { getAppBaseUrl } = await import('@/lib/utils');
+    const baseUrl = getAppBaseUrl();
     const inviteUrl = `${baseUrl}/team/invite/${invitation.id}?token=${invitation.id}&email=${encodeURIComponent(invitation.email)}`;
 
     // 이메일 재발송

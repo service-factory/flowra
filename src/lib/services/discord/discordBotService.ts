@@ -389,7 +389,9 @@ export class DiscordBotService {
    */
   private async executeTaskAction(action: string, taskId: string, userId: string, teamId: string, data?: any): Promise<any> {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/discord/interactions`, {
+      const { getAppBaseUrl } = await import('@/lib/utils');
+      const baseUrl = getAppBaseUrl();
+      const response = await fetch(`${baseUrl}/api/discord/interactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

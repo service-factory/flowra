@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createSuccessResponse, createErrorResponse } from '@/lib/auth/middleware';
+import { getAppBaseUrl } from '@/lib/utils';
 import { z } from 'zod';
 
 const commandSchema = z.object({
@@ -83,7 +84,7 @@ async function handleCompleteCommand(args: string[], userId: string, teamId: str
   const taskId = args[0];
 
   // 인터랙션 API 호출
-  const interactionResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/discord/interactions`, {
+  const interactionResponse = await fetch(`${getAppBaseUrl()}/api/discord/interactions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ async function handleExtendCommand(args: string[], userId: string, teamId: strin
   }
 
   // 인터랙션 API 호출
-  const interactionResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/discord/interactions`, {
+  const interactionResponse = await fetch(`${getAppBaseUrl()}/api/discord/interactions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -168,7 +169,7 @@ async function handleRescheduleCommand(args: string[], userId: string, teamId: s
   }
 
   // 인터랙션 API 호출
-  const interactionResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/discord/interactions`, {
+  const interactionResponse = await fetch(`${getAppBaseUrl()}/api/discord/interactions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -205,7 +206,7 @@ async function handleViewCommand(args: string[], userId: string, teamId: string)
   const taskId = args[0];
 
   // 인터랙션 API 호출
-  const interactionResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/discord/interactions`, {
+  const interactionResponse = await fetch(`${getAppBaseUrl()}/api/discord/interactions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

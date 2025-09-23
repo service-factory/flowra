@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getAppBaseUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Logo } from '@/components/ui/logo';
@@ -24,8 +25,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setIsLoading(true);
       setLoadingProvider(provider);
 
+      const redirectUrl = getAppBaseUrl();
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
+        options: {
+          redirectTo: redirectUrl,
+        },
       });
 
       if (error) {
