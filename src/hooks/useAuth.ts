@@ -78,6 +78,7 @@ const fetchTeamMemberships = async (userId: string) => {
         joined_at: membership.joined_at || undefined,
         created_at: membership.created_at || '',
         updated_at: membership.updated_at || '',
+        teams: membership.teams as Team, // teams 관계 포함
       }));
 
     const firstTeam = memberships[0].teams as Team;
