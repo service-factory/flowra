@@ -127,6 +127,7 @@ export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isQuickMode, setIsQuickMode] = useState(true);
 
   // 슬러그 자동 생성
   const generateSlug = (teamName: string) => {
@@ -285,6 +286,7 @@ export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalPr
     setWorkingHours({ start: "09:00", end: "18:00", timezone: "Asia/Seoul" });
     setErrors({});
     setShowAdvanced(false);
+    setIsQuickMode(true);
   };
 
   useEffect(() => {
@@ -294,6 +296,216 @@ export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalPr
   }, [isOpen]);
 
   const renderStepContent = () => {
+    // 퀵 모드 - 모든 필수 정보를 한 화면에
+    if (isQuickMode) {
+      return (
+        <div className="space-y-8">
+          {/* 헤더 섹션 */}
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+              <Building2 className="w-10 h-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+              새 팀 만들기
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">
+              몇 분 안에 팀을 설정하고 시작하세요
+            </p>
+          </div>
+
+          {/* 모드 선택 */}
+          <div className="flex items-center justify-center space-x-4 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
+            <button
+              onClick={() => setIsQuickMode(true)}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                isQuickMode 
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              빠른 설정
+            </button>
+            <button
+              onClick={() => setIsQuickMode(false)}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                !isQuickMode 
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              상세 설정
+            </button>
+          </div>
+
+          {/* 필수 정보 섹션 */}
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Label htmlFor="team-name" className="text-base font-semibold text-gray-900 dark:text-white">
+                  팀 이름 *
+                </Label>
+                <div className="relative">
+                  <Users className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    id="team-name"
+                    placeholder="예: 개발팀, 마케팅팀, 사이드프로젝트"
+                    value={name}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    className={`h-12 pl-12 text-base ${errors.name ? "border-red-300 focus:border-red-500" : "border-gray-300 focus:border-blue-500"}`}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {errors.name && (
+                  <div className="flex items-center space-x-2 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{errors.name}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="team-slug" className="text-base font-semibold text-gray-900 dark:text-white">
+                  팀 URL *
+                </Label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-4 h-12 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-sm font-medium">
+                    flowra.app/team/
+                  </span>
+                  <div className="relative flex-1">
+                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="team-slug"
+                      placeholder="team-url"
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                      className={`h-12 rounded-l-none pl-10 text-base ${errors.slug ? "border-red-300 focus:border-red-500" : "border-gray-300 focus:border-blue-500"}`}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+                {errors.slug && (
+                  <div className="flex items-center space-x-2 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{errors.slug}</span>
+                  </div>
+                )}
+                <p className="text-sm text-gray-500">
+                  팀 URL은 나중에 변경할 수 없습니다
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="team-description" className="text-base font-semibold text-gray-900 dark:text-white">
+                  팀 설명 (선택사항)
+                </Label>
+                <div className="relative">
+                  <FileText className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                  <Textarea
+                    id="team-description"
+                    placeholder="팀에 대한 간단한 설명을 작성해주세요..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    className={`pl-12 text-base ${errors.description ? "border-red-300 focus:border-red-500" : "border-gray-300 focus:border-blue-500"}`}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {errors.description && (
+                  <div className="flex items-center space-x-2 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{errors.description}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-gray-500">
+                    팀원들이 팀의 목적을 이해하는데 도움이 됩니다
+                  </p>
+                  <span className="text-sm text-gray-400">{description.length}/200</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 브랜딩 섹션 */}
+            <div className="space-y-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <div className="space-y-4">
+                <Label className="text-base font-semibold text-gray-900 dark:text-white">
+                  팀 브랜딩
+                </Label>
+                
+                {/* 색상 선택 */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">색상</Label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {TEAM_COLORS.map((colorOption) => (
+                      <button
+                        key={colorOption.value}
+                        onClick={() => setColor(colorOption.value)}
+                        className={`p-3 rounded-xl border-2 transition-all hover:scale-105 ${
+                          color === colorOption.value
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                            : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-full ${colorOption.class} mx-auto mb-2 shadow-sm`} />
+                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">{colorOption.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 아이콘 선택 */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">아이콘</Label>
+                  <div className="grid grid-cols-5 gap-3">
+                    {TEAM_ICONS.map((iconOption) => {
+                      const IconComponent = iconOption.icon;
+                      return (
+                        <button
+                          key={iconOption.name}
+                          onClick={() => setSelectedIcon(iconOption.name)}
+                          className={`p-3 rounded-xl border-2 transition-all hover:scale-105 ${
+                            selectedIcon === iconOption.name
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+                          }`}
+                        >
+                          <IconComponent className="w-6 h-6 text-gray-600 dark:text-gray-400 mx-auto mb-2" />
+                          <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">{iconOption.label}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 미리보기 */}
+              <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-16 h-16 rounded-2xl ${TEAM_COLORS.find(c => c.value === color)?.class} flex items-center justify-center shadow-lg`}>
+                    {React.createElement(TEAM_ICONS.find(i => i.name === selectedIcon)?.icon || Building2, { className: "w-8 h-8 text-white" })}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                      {name || "팀 이름"}
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                      flowra.app/team/{slug || "team-url"}
+                    </p>
+                    {description && (
+                      <p className="text-sm text-gray-500 dark:text-gray-500 line-clamp-2">
+                        {description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // 상세 모드 - 기존 3단계 프로세스
     switch (currentStep) {
       case 1:
         return (
@@ -621,97 +833,141 @@ export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Building2 className="h-5 w-5 text-blue-600" />
-            <span>새 팀 만들기</span>
-          </DialogTitle>
-          <DialogDescription>
-            단계별로 팀을 설정하고 멤버들을 초대해보세요.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className={`${isQuickMode ? 'max-w-3xl' : 'max-w-2xl'} max-h-[95vh] overflow-hidden flex flex-col`}>
+        {!isQuickMode && (
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              <span>새 팀 만들기</span>
+            </DialogTitle>
+            <DialogDescription>
+              단계별로 팀을 설정하고 멤버들을 초대해보세요.
+            </DialogDescription>
+          </DialogHeader>
+        )}
 
-        <div className="flex items-center justify-center space-x-4 mb-6">
-          {[1, 2, 3].map((step) => (
-            <div key={step} className="flex items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step <= currentStep
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-              }`}>
-                {step}
+        {!isQuickMode && (
+          <div className="flex items-center justify-center space-x-4 mb-6">
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step <= currentStep
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                }`}>
+                  {step}
+                </div>
+                {step < 3 && (
+                  <div className={`w-8 h-0.5 mx-2 ${
+                    step < currentStep ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`} />
+                )}
               </div>
-              {step < 3 && (
-                <div className={`w-8 h-0.5 mx-2 ${
-                  step < currentStep ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                }`} />
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-1">
           {renderStepContent()}
           
           {errors.submit && (
-            <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <p className="text-sm text-red-600 dark:text-red-400">{errors.submit}</p>
+            <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">{errors.submit}</p>
               </div>
             </div>
           )}
           
           {errors.success && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <p className="text-sm text-green-600 dark:text-green-400">{errors.success}</p>
+            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium">{errors.success}</p>
               </div>
             </div>
           )}
         </div>
 
-        <DialogFooter className="flex items-center justify-between pt-6">
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <Info className="h-4 w-4" />
-            <span>언제든지 설정을 변경할 수 있습니다</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            {currentStep > 1 && (
-              <Button variant="outline" onClick={handlePrev} disabled={isSubmitting}>
-                이전
-              </Button>
-            )}
-            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-              취소
-            </Button>
-            {currentStep < 3 ? (
-              <Button onClick={handleNext} disabled={isSubmitting}>
-                다음
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting || !name.trim() || !slug.trim()}
-                className="min-w-[120px]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    생성 중...
-                  </>
-                ) : (
-                  <>
-                    <Building2 className="h-4 w-4 mr-2" />
-                    팀 생성
-                  </>
+        <DialogFooter className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+          {isQuickMode ? (
+            // 퀵 모드 버튼
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <Info className="h-4 w-4" />
+                <span>언제든지 설정을 변경할 수 있습니다</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={onClose} 
+                  disabled={isSubmitting}
+                  className="px-6"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting || !name.trim() || !slug.trim()}
+                  className="px-8 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                      생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <Building2 className="h-4 w-4 mr-2" />
+                      팀 만들기
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            // 상세 모드 버튼 (기존 3단계)
+            <>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <Info className="h-4 w-4" />
+                <span>언제든지 설정을 변경할 수 있습니다</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {currentStep > 1 && (
+                  <Button variant="outline" onClick={handlePrev} disabled={isSubmitting}>
+                    이전
+                  </Button>
                 )}
-              </Button>
-            )}
-          </div>
+                <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+                  취소
+                </Button>
+                {currentStep < 3 ? (
+                  <Button onClick={handleNext} disabled={isSubmitting}>
+                    다음
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !name.trim() || !slug.trim()}
+                    className="min-w-[120px]"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        생성 중...
+                      </>
+                    ) : (
+                      <>
+                        <Building2 className="h-4 w-4 mr-2" />
+                        팀 생성
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

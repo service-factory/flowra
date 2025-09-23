@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { customFetch } from '@/lib/requests/customFetch';
 import { 
@@ -11,7 +12,12 @@ import {
 import { formatBotTestResult } from '../utils/discordUtils';
 
 export const useDiscordData = () => {
+  const searchParams = useSearchParams();
+  const teamId = searchParams.get('teamId');
   const { currentTeam } = useAuth();
+  
+  // URL 파라미터의 teamId를 우선 사용, 없으면 currentTeam 사용
+  const actualTeamId = teamId && teamId !== '0' ? teamId : currentTeam?.id;
   
   const [discordStatus, setDiscordStatus] = useState<DiscordStatus | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +37,7 @@ export const useDiscordData = () => {
   });
 
   const checkDiscordStatus = useCallback(async () => {
-    if (!currentTeam?.id) return;
+    if (!actualTeamId) return;
 
     setIsChecking(true);
     setError(null);
@@ -40,7 +46,7 @@ export const useDiscordData = () => {
       await customFetch.getFetch({ url: '/api/discord/init' }).catch(console.error);
       
       const response = await customFetch.getFetch<{ data: DiscordStatus }, any>({
-        url: `/api/discord/status?teamId=${currentTeam.id}`,
+        url: `/api/discord/status?teamId=${actualTeamId}`,
       });
 
       if (response.data) {
@@ -52,7 +58,7 @@ export const useDiscordData = () => {
     } finally {
       setIsChecking(false);
     }
-  }, [currentTeam?.id]);
+  }, [actualTeamId]);
 
   const checkUserSettings = useCallback(async () => {
     try {
@@ -69,7 +75,7 @@ export const useDiscordData = () => {
   }, []);
 
   const handleConnect = useCallback(async () => {
-    if (!currentTeam?.id) return;
+    if (!actualTeamId) return;
 
     setIsLoading(true);
     setError(null);
@@ -79,7 +85,7 @@ export const useDiscordData = () => {
       const response = await customFetch.postFetch<any, any>({
         url: '/api/discord/connect',
         body: {
-          team_id: currentTeam.id,
+          team_id: actualTeamId,
           guild_id: connectionForm.guildId,
           channel_id: connectionForm.channelId,
         },
@@ -96,10 +102,10 @@ export const useDiscordData = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentTeam?.id, connectionForm, checkDiscordStatus]);
+  }, [actualTeamId, connectionForm, checkDiscordStatus]);
 
   const handleDisconnect = useCallback(async () => {
-    if (!currentTeam?.id) return;
+    if (!actualTeamId) return;
 
     if (!confirm('Discord 봇 연결을 해제하시겠습니까?')) {
       return;
@@ -110,7 +116,7 @@ export const useDiscordData = () => {
 
     try {
       const response = await customFetch.deleteFetch<any, any>({
-        url: `/api/discord/status?teamId=${currentTeam.id}`,
+        url: `/api/discord/status?teamId=${actualTeamId}`,
       });
 
       if (response.data) {
@@ -123,7 +129,7 @@ export const useDiscordData = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentTeam?.id]);
+  }, [actualTeamId]);
 
   const handleSaveUserSettings = useCallback(async () => {
     if (!userSettings) return;

@@ -24,7 +24,10 @@ export function TeamSelectModal({
   const { refreshTeamData } = useAuth();
   const router = useRouter();
 
-  const handleTeamSelect = (teamId: string) => {
+  const handleTeamSelect = async (teamId: string) => {
+    // 팀 데이터 새로고침으로 currentTeam 업데이트
+    await refreshTeamData();
+    // URL 파라미터로 팀 ID 전달
     router.push(`${redirectPath}?teamId=${teamId}`);
     onClose();
   };

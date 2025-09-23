@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeamData } from '@/hooks/useTeamData';
 import { customFetch } from '@/lib/requests/customFetch';
@@ -44,11 +45,17 @@ export const useDashboardData = () => {
     loading: false 
   });
   
+  const searchParams = useSearchParams();
+  const teamId = searchParams.get('teamId');
   const { refreshTeamData, currentTeam } = useAuth();
-  const { data: teamData, isLoading } = useTeamData(currentTeam?.id || null);
+  
+  // URL 파라미터의 teamId를 우선 사용, 없으면 currentTeam 사용
+  const actualTeamId = teamId && teamId !== '0' ? teamId : currentTeam?.id;
+  
+  const { data: teamData, isLoading } = useTeamData(actualTeamId);
 
   const checkDiscordStatus = useCallback(async () => {
-    if (!currentTeam?.id) {
+    if (!actualTeamId) {
       setDiscordStatus({ connected: false, loading: false });
       return;
     }
@@ -59,7 +66,7 @@ export const useDashboardData = () => {
       const response = await customFetch.getFetch<undefined, {
         connected: boolean;
         guild?: { name: string; icon?: string };
-      }>({ url: '/api/discord/status' });
+      }>({ url: `/api/discord/status?teamId=${actualTeamId}` });
       
       setDiscordStatus({
         connected: response.connected,
@@ -70,7 +77,7 @@ export const useDashboardData = () => {
       console.error('Discord 상태 확인 오류:', error);
       setDiscordStatus({ connected: false, loading: false });
     }
-  }, [currentTeam?.id]);
+  }, [actualTeamId]);
 
   useEffect(() => {
     checkDiscordStatus();

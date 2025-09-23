@@ -72,16 +72,20 @@ export default function MainLayout({
   };
 
   const teamsData = useMemo(() => {
-    return teamMemberships.map(membership => ({
-      id: membership.team_id,
-      name: currentTeam?.name || '팀',
-      slug: currentTeam?.slug || 'team',
-      description: currentTeam?.description,
-      color: (currentTeam?.settings as Record<string, unknown>)?.color as string || 'blue',
-      icon: (currentTeam?.settings as Record<string, unknown>)?.icon as string || 'Building2',
-      is_active: currentTeam?.is_active || true
-    }));
-  }, [teamMemberships, currentTeam]);
+    return teamMemberships.map(membership => {
+      // 각 팀의 실제 정보를 가져오기 위해 teamMemberships에서 팀 정보 추출
+      const teamInfo = membership.teams || {};
+      return {
+        id: membership.team_id,
+        name: teamInfo.name || '팀',
+        slug: teamInfo.slug || 'team',
+        description: teamInfo.description,
+        color: (teamInfo.settings as Record<string, unknown>)?.color as string || 'blue',
+        icon: (teamInfo.settings as Record<string, unknown>)?.icon as string || 'Building2',
+        is_active: teamInfo.is_active || true
+      };
+    });
+  }, [teamMemberships]);
 
   const pageInfo = getPageInfo();
 

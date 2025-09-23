@@ -177,9 +177,9 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, [supabase, queryClient, logout]);
 
-  const refreshTeamData = useCallback(() => {
+  const refreshTeamData = useCallback(async () => {
     if (user?.id) {
-      queryClient.invalidateQueries({ queryKey: ['teamMemberships', user.id] });
+      await queryClient.invalidateQueries({ queryKey: ['teamMemberships', user.id] });
     }
   }, [user?.id, queryClient]);
 
