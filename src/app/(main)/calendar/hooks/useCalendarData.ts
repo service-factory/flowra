@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTeamData } from '@/hooks/useTeamData';
 import { useTaskHandlers } from '@/hooks/useTaskHandlers';
@@ -89,9 +89,6 @@ export const useCalendarData = () => {
   const taskMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTaskMove = useCallback((taskId: string, newDueDate: string) => {
-    console.log('Task move:', { taskId, newDueDate });
-    
-    // 디바운싱: 500ms 내에 여러 번 호출되면 마지막 호출만 실행
     if (taskMoveTimeoutRef.current) {
       clearTimeout(taskMoveTimeoutRef.current);
     }
@@ -122,12 +119,6 @@ export const useCalendarData = () => {
   const goToToday = useCallback(() => {
     setCurrentDate(new Date());
   }, []);
-
-  useEffect(() => {
-    if (isRefreshing) {
-      console.log('캘린더 데이터 새로고침 중...');
-    }
-  }, [isRefreshing]);
 
   return {
     currentDate,

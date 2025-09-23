@@ -156,12 +156,6 @@ export const useTasksData = () => {
   const isRefreshing = Boolean(isFetching && teamData);
 
   useEffect(() => {
-    if (isRefreshing) {
-      console.log('태스크 데이터 새로고침 중...');
-    }
-  }, [isRefreshing]);
-
-  useEffect(() => {
     return () => {
       if (taskActionTimeoutRef.current) {
         clearTimeout(taskActionTimeoutRef.current);

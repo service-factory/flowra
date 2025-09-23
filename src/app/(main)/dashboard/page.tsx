@@ -36,9 +36,11 @@ export default function Dashboard() {
         
         <StatsCards stats={stats} isLoading={isLoading} />
         
-          <div className="mb-8">
-            <DiscordOnboarding />
-          </div>
+          {!discordStatus.connected && (
+            <div className="mb-8">
+              <DiscordOnboarding />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <RecentTasks 

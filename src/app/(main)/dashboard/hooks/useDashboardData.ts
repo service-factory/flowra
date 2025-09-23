@@ -64,13 +64,16 @@ export const useDashboardData = () => {
 
     try {
       const response = await customFetch.getFetch<undefined, {
-        connected: boolean;
-        guild?: { name: string; icon?: string };
+        success: boolean;
+        data: {
+          connected: boolean;
+          guild?: { name: string; icon?: string };
+        };
       }>({ url: `/api/discord/status?teamId=${actualTeamId}` });
       
       setDiscordStatus({
-        connected: response.connected,
-        guild: response.guild,
+        connected: response.data?.connected || false,
+        guild: response.data?.guild,
         loading: false
       });
     } catch (error) {
