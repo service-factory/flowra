@@ -43,6 +43,7 @@ export interface TeamMember {
   created_at: string;
   updated_at: string;
   user?: User;
+  teams?: Team;
 }
 
 // 프로젝트 관련 타입

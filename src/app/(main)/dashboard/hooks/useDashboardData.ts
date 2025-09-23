@@ -52,7 +52,7 @@ export const useDashboardData = () => {
   // URL 파라미터의 teamId를 우선 사용, 없으면 currentTeam 사용
   const actualTeamId = teamId && teamId !== '0' ? teamId : currentTeam?.id;
   
-  const { data: teamData, isLoading } = useTeamData(actualTeamId);
+  const { data: teamData, isLoading } = useTeamData(actualTeamId || null);
 
   const checkDiscordStatus = useCallback(async () => {
     if (!actualTeamId) {
