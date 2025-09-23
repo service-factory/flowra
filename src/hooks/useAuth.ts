@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Session } from '@supabase/supabase-js';
+
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/store/auth';
 import type { User, Team, TeamMember } from '@/types';
-import type { Session } from '@supabase/supabase-js';
+
 
 const transformSupabaseUser = (session: Session): User => {
   return {
@@ -88,7 +90,7 @@ const fetchTeamMemberships = async (userId: string) => {
   return { teamMembers: [], currentTeam: null };
 };
 
-export function useAuth() {
+const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const queryClient = useQueryClient();
   const { 
@@ -198,4 +200,6 @@ export function useAuth() {
     refreshTeamData,
     isSigningOut: signOutMutation.isPending,
   };
-}
+};
+
+export default useAuth;

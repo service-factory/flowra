@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LeftNavigationBar } from '@/components/left-navigation-bar';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 
 export default function MainLayout({

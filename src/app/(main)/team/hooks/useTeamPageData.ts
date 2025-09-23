@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { useTeamMembers, type InvitationData } from '@/hooks/useTeamMembers';
 import { TeamPageState, InvitationData as TeamInvitationData } from '../types/team';
 

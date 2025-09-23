@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { useTeamData } from '@/hooks/useTeamData';
 import { customFetch } from '@/lib/requests/customFetch';
 import { DashboardStats, DiscordStatus, RecentActivity, Task } from '../types/dashboard';

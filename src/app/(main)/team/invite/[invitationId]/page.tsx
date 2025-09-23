@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { getFetch, postFetch } from '@/lib/requests/customFetch';
 import { LoginModal } from '@/components/login-modal';
 import { useToastContext } from '@/components/toast-provider';

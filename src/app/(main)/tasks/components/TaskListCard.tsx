@@ -14,7 +14,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MoreHorizontal, Trash2, RefreshCw, Link, ChevronRight, MessageSquare, Paperclip } from "lucide-react";
 import React from "react";
 import { TaskStatus } from "@/types";

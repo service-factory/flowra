@@ -17,12 +17,39 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Flowra - 팀 업무 관리 플랫폼",
-  description: "사이드 프로젝트 팀을 위한 효율적인 업무 관리 및 일정 조율 플랫폼",
-  keywords: ["업무관리", "프로젝트관리", "팀워크", "일정관리", "사이드프로젝트"],
+  title: {
+    default: "Flowra – 팀을 위한 업무/일정 협업 플랫폼",
+    template: "%s | Flowra"
+  },
+  description: "Flowra는 팀을 위한 업무 관리, 일정, Discord 알림 연동을 제공하는 협업 플랫폼입니다.",
+  keywords: ["Flowra", "플로라", "업무관리", "프로젝트관리", "캘린더", "협업", "팀", "디스코드", "알림", "Kanban", "Dashboard"],
   authors: [{ name: "Flowra Team" }],
   creator: "Flowra",
   publisher: "Flowra",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://flowra.app"),
+  openGraph: {
+    title: "Flowra – 팀을 위한 업무/일정 협업 플랫폼",
+    description: "업무와 일정을 한 곳에서. Discord 알림과 함께 팀의 생산성을 높이세요.",
+    url: "/",
+    siteName: "Flowra",
+    images: [
+      { url: "/api/og", width: 1200, height: 630, alt: "Flowra" }
+    ],
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Flowra – 팀을 위한 업무/일정 협업 플랫폼",
+    description: "업무와 일정을 한 곳에서. Discord 알림과 함께 팀의 생산성을 높이세요.",
+    images: ["/api/og"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  alternates: { canonical: "/" },
   formatDetection: {
     email: false,
     address: false,

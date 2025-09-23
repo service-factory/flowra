@@ -5,7 +5,7 @@ import { useTaskFilters } from '@/hooks/useTaskFilters';
 import { useViewMode } from '@/hooks/useViewMode';
 import { useTaskHandlers } from '@/hooks/useTaskHandlers';
 import { useTaskActions } from '@/hooks/useTaskActions';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { TaskCreateInitials, OptimisticUpdate } from '../types/tasks';
 import { Task } from '@/types';
 

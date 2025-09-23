@@ -1,6 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  Mail,
+  UserPlus,
+  Users,
+  Crown,
+  Eye,
+  CheckCircle,
+  Plus,
+  X,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,16 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Mail,
-  UserPlus,
-  Users,
-  Crown,
-  Eye,
-  CheckCircle,
-  Plus,
-  X,
-} from "lucide-react";
 
 interface TeamInviteModalProps {
   isOpen: boolean;
@@ -69,7 +70,7 @@ const roleOptions = [
 ];
 
 
-export function TeamInviteModal({ isOpen, onClose, onInvite }: TeamInviteModalProps) {
+const TeamInviteModal = ({ isOpen, onClose, onInvite }: TeamInviteModalProps) => {
   const [invitations, setInvitations] = useState<InvitationData[]>([]);
   const [currentEmail, setCurrentEmail] = useState("");
   const [currentRole, setCurrentRole] = useState<"admin" | "member" | "viewer">("member");
@@ -301,4 +302,6 @@ export function TeamInviteModal({ isOpen, onClose, onInvite }: TeamInviteModalPr
       </DialogContent>
     </Dialog>
   );
-}
+};
+
+export default TeamInviteModal;

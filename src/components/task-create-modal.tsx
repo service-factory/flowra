@@ -34,8 +34,7 @@ import {
   Timer,
   Sparkles,
   ChevronLeft,
-  ChevronRight,
-  CheckCircle
+  ChevronRight
 } from "lucide-react";
 
 interface TaskCreateModalProps {

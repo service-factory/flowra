@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { SettingsPageState } from '../types/settings';
 import { getSettingsCategories } from '../utils/settingsUtils';
 

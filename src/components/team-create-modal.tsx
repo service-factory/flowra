@@ -1,6 +1,25 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  Users,
+  Building2,
+  Hash,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Globe,
+  Bell,
+  Shield,
+  Palette,
+  ArrowRight,
+  Info,
+  MessageSquare,
+  Settings,
+  Eye,
+  EyeOff
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,24 +39,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Users,
-  Building2,
-  Hash,
-  FileText,
-  AlertCircle,
-  CheckCircle,
-  Globe,
-  Bell,
-  Shield,
-  Palette,
-  ArrowRight,
-  Info,
-  MessageSquare,
-  Settings,
-  Eye,
-  EyeOff
-} from "lucide-react";
 
 interface TeamCreateModalProps {
   isOpen: boolean;
@@ -104,7 +105,7 @@ const LANGUAGES = [
 ];
 
 
-export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalProps) {
+const TeamCreateModal = ({ isOpen, onClose, onCreate }: TeamCreateModalProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -973,3 +974,5 @@ export function TeamCreateModal({ isOpen, onClose, onCreate }: TeamCreateModalPr
     </Dialog>
   );
 }
+
+export default TeamCreateModal;

@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TeamSelector } from "./team-selector";
-import { TeamCreateModal } from "./team-create-modal";
-import { TeamInviteModal } from "./team-invite-modal";
-import { useAuth } from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth";
+
+import TeamSelector from "./team-selector";
+import TeamCreateModal from "./team-create-modal";
+import TeamInviteModal from "./team-invite-modal";
+
 
 interface TeamSelectModalProps {
   isOpen: boolean;
@@ -14,11 +17,11 @@ interface TeamSelectModalProps {
   redirectPath?: string;
 }
 
-export function TeamSelectModal({ 
+const TeamSelectModal = ({ 
   isOpen, 
   onClose, 
   redirectPath = "/dashboard" 
-}: TeamSelectModalProps) {
+}: TeamSelectModalProps) => {
   const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
   const [isTeamInviteModalOpen, setIsTeamInviteModalOpen] = useState(false);
   const { refreshTeamData } = useAuth();
@@ -89,4 +92,6 @@ export function TeamSelectModal({
       />
     </>
   );
-}
+};
+
+export default TeamSelectModal;

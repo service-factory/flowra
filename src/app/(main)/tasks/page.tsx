@@ -1,11 +1,11 @@
 "use client";
 
-import { TeamGuard } from "@/components/team-guard";
-import { TeamCreateModal } from "@/components/team-create-modal";
+import TeamGuard from "@/components/team-guard";
+import TeamCreateModal from "@/components/team-create-modal";
 import TaskCreateModal from "@/components/task-create-modal";
 import { TasksToolbar } from "./components/TasksToolbar";
 import { TagFilterPanel } from "./components/TagFilterPanel";
-import { TaskDetailDrawer } from "./components/TaskDetailDrawer";
+import TaskDetailDrawer from "./components/TaskDetailDrawer";
 import { TaskViewRenderer } from "./components/TaskViewRenderer";
 import { ViewModeSelector } from "./components/ViewModeSelector";
 import { getTagColor } from "@/lib/utils/taskUtils";

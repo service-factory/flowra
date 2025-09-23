@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/ui/logo";
 import { LoginModal } from "@/components/login-modal";
 import { UserProfile } from "@/components/user-profile";
-import { TeamInviteModal } from "@/components/team-invite-modal";
-import { TeamCreateModal } from "@/components/team-create-modal";
-import { TeamSelectModal } from "@/components/team-select-modal";
-import { useAuth } from "@/hooks/useAuth";
+import TeamInviteModal from "@/components/team-invite-modal";
+import TeamCreateModal from "@/components/team-create-modal";
+import TeamSelectModal from "@/components/team-select-modal";
+import useAuth from "@/hooks/useAuth";
 import {
   CheckCircle,
   Users,
@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-export default function Home() {
+const Home = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isTeamInviteModalOpen, setIsTeamInviteModalOpen] = useState(false);
@@ -772,4 +772,6 @@ onCreate={async () => {
       />
     </div>
   );
-}
+};
+
+export default Home;

@@ -14,7 +14,7 @@ import {
   Users
 } from "lucide-react";
 import { customFetch } from "@/lib/requests/customFetch";
-import { useAuth } from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
 
 interface DiscordOnboardingProps {

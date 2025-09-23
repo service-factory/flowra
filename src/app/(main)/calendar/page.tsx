@@ -1,14 +1,15 @@
 "use client";
 
-import { TeamGuard } from "@/components/team-guard";
-import { TeamCreateModal } from "@/components/team-create-modal";
+import TeamGuard from "@/components/team-guard";
+import TeamCreateModal from "@/components/team-create-modal";
 import TaskCreateModal from "@/components/task-create-modal";
-import { TaskDetailDrawer } from "../tasks/components/TaskDetailDrawer";
-import { CalendarHeader } from "./components/CalendarHeader";
-import { CalendarView } from "./components/CalendarView";
-import { useCalendarData } from "./hooks/useCalendarData";
 
-export default function CalendarPage() {
+import CalendarHeader from "./components/CalendarHeader";
+import CalendarView from "./components/CalendarView";
+import useCalendarData from "./hooks/useCalendarData";
+import TaskDetailDrawer from "../tasks/components/TaskDetailDrawer";
+
+const CalendarPage = () => {
   const {
     currentDate,
     viewMode,
@@ -103,4 +104,6 @@ export default function CalendarPage() {
       />
     </TeamGuard>
   );
-}
+};
+
+export default CalendarPage;

@@ -20,7 +20,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { customFetch } from "@/lib/requests/customFetch";
-import { useAuth } from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth";
 import { TasksToolbarSkeleton } from './TasksLoadingSkeleton';
 
 interface TasksToolbarProps {

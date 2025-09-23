@@ -23,7 +23,7 @@ interface CalendarHeaderProps {
   isLoading?: boolean;
 }
 
-export const CalendarHeader = memo(function CalendarHeader({
+const CalendarHeader = memo(({
   currentDate,
   viewMode,
   onViewModeChange,
@@ -31,7 +31,7 @@ export const CalendarHeader = memo(function CalendarHeader({
   onGoToToday,
   openTaskCreateModal,
   isLoading = false
-}: CalendarHeaderProps) {
+}: CalendarHeaderProps) => {
   if (isLoading) {
     return <CalendarHeaderSkeleton />;
   }
@@ -120,3 +120,7 @@ export const CalendarHeader = memo(function CalendarHeader({
     </div>
   );
 });
+
+CalendarHeader.displayName = 'CalendarHeader';
+
+export default CalendarHeader;

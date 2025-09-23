@@ -2,11 +2,11 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTeamData } from '@/hooks/useTeamData';
 import { useTaskHandlers } from '@/hooks/useTaskHandlers';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { ViewMode, TaskCreateInitials } from '../types/calendar';
 import { groupTasksByDate } from '../utils/calendarUtils';
 
-export const useCalendarData = () => {
+const useCalendarData = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isTaskCreateOpen, setIsTaskCreateOpen] = useState(false);
   const [taskCreateInitials, setTaskCreateInitials] = useState<TaskCreateInitials>({});
@@ -88,7 +88,10 @@ export const useCalendarData = () => {
 
   const taskMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleTaskMove = useCallback((taskId: string, newDueDate: string) => {
+  const handleTaskMove = useCallback((_taskId: string, _newDueDate: string) => {
+    // Mark parameters as intentionally unused to satisfy lint rules
+    void _taskId;
+    void _newDueDate;
     if (taskMoveTimeoutRef.current) {
       clearTimeout(taskMoveTimeoutRef.current);
     }
@@ -152,3 +155,5 @@ export const useCalendarData = () => {
     currentTeam
   };
 };
+
+export default useCalendarData;

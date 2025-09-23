@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TeamCreateModal } from "@/components/team-create-modal";
-import { TeamInviteModal } from "@/components/team-invite-modal";
-import { useAuth } from "@/hooks/useAuth";
+import TeamCreateModal from "@/components/team-create-modal";
+import TeamInviteModal from "@/components/team-invite-modal";
+import useAuth from "@/hooks/useAuth";
 import { 
   Users, 
   Building2, 
@@ -21,7 +21,7 @@ interface TeamGuardProps {
   fallback?: React.ReactNode;
 }
 
-export function TeamGuard({ children, fallback }: TeamGuardProps) {
+const TeamGuard = ({ children, fallback }: TeamGuardProps) => {
   const { isAuthenticated, hasTeam, isLoading } = useAuth();
   const [isTeamCreateModalOpen, setIsTeamCreateModalOpen] = useState(false);
   const [isTeamInviteModalOpen, setIsTeamInviteModalOpen] = useState(false);
@@ -223,4 +223,6 @@ export function TeamGuard({ children, fallback }: TeamGuardProps) {
       />
     </div>
   );
-}
+};
+
+export default TeamGuard;

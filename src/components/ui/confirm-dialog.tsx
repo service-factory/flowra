@@ -80,7 +80,8 @@ export function ConfirmDialog({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && open) {
-        handleCancel();
+        onCancel?.();
+        onOpenChange(false);
       }
     };
 
@@ -91,7 +92,7 @@ export function ConfirmDialog({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open, onCancel, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

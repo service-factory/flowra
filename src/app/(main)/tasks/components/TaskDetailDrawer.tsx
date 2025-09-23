@@ -1,13 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { 
   X, 
   Edit3, 
@@ -18,6 +11,14 @@ import {
   Triangle,
   Plus,
 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Task, TaskTag, TaskStatus, TaskPriority } from "@/types";
 
 interface TaskDetailDrawerProps {
@@ -34,14 +35,14 @@ interface TaskDetailDrawerProps {
   }>;
 }
 
-export function TaskDetailDrawer({ 
+const TaskDetailDrawer = ({ 
   task, 
   isOpen, 
   onClose, 
   onUpdate, 
   onDelete, 
   teamMembers 
-}: TaskDetailDrawerProps) {
+}: TaskDetailDrawerProps) => {
   const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task | null>(null);
@@ -559,3 +560,5 @@ export function TaskDetailDrawer({
     </>
   );
 }
+
+export default TaskDetailDrawer;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { TeamCreateModal } from "@/components/team-create-modal";
-import { TeamGuard } from "@/components/team-guard";
+import TeamCreateModal from "@/components/team-create-modal";
+import TeamGuard from "@/components/team-guard";
 import { DiscordOnboarding } from "@/components/discord-onboarding";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { WelcomeSection } from "./components/WelcomeSection";

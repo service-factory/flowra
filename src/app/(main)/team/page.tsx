@@ -1,8 +1,8 @@
 "use client";
 
-import { TeamGuard } from "@/components/team-guard";
-import { TeamInviteModal } from "@/components/team-invite-modal";
-import { TeamCreateModal } from "@/components/team-create-modal";
+import TeamGuard from "@/components/team-guard";
+import TeamInviteModal from "@/components/team-invite-modal";
+import TeamCreateModal from "@/components/team-create-modal";
 import { TeamHeader } from "./components/TeamHeader";
 import { TeamFilters } from "./components/TeamFilters";
 import { TeamMembersGrid } from "./components/TeamMembersGrid";

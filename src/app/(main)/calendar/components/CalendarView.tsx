@@ -118,9 +118,9 @@ function DroppableDateCell({
       </div>
     </div>
   );
-}
+};
 
-export const CalendarView = memo(function CalendarView({
+const CalendarView = memo(({
   currentDate,
   viewMode,
   tasksByDate,
@@ -129,7 +129,7 @@ export const CalendarView = memo(function CalendarView({
   openTaskCreateModal,
   isLoading = false,
   isRefreshing = false,
-}: CalendarViewProps) {
+}: CalendarViewProps) => {
   const isToday = (date: Date) => {
     const today = new Date();
     return date.getFullYear() === today.getFullYear() &&
@@ -467,3 +467,7 @@ export const CalendarView = memo(function CalendarView({
     </div>
   );
 });
+
+CalendarView.displayName = 'CalendarView';
+
+export default CalendarView;
