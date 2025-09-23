@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { 
   X, 
   Edit3, 
@@ -41,6 +42,7 @@ export function TaskDetailDrawer({
   onDelete, 
   teamMembers 
 }: TaskDetailDrawerProps) {
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
   const [isEditing, setIsEditing] = useState(false);
   const [editedTask, setEditedTask] = useState<Task | null>(null);
   const [newTag, setNewTag] = useState("");
@@ -234,10 +236,17 @@ export function TaskDetailDrawer({
   };
 
   const handleDelete = () => {
-    if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
-      onDelete(task.id);
-      onClose();
-    }
+    confirm({
+      title: "업무 삭제",
+      description: "정말로 이 업무를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+      confirmText: "삭제",
+      cancelText: "취소",
+      variant: "destructive",
+      onConfirm: () => {
+        onDelete(task.id);
+        onClose();
+      }
+    });
   };
 
   // 담당자 변경 핸들러
@@ -270,6 +279,7 @@ export function TaskDetailDrawer({
 
   return (
     <>
+      {ConfirmDialogComponent}
       {/* Backdrop */}
       {isOpen && (
         <div 

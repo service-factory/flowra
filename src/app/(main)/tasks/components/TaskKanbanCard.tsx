@@ -13,6 +13,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MoreHorizontal, Trash2, RefreshCw, Link } from "lucide-react";
 import React from "react";
 import { TaskStatus } from "@/types";
@@ -62,6 +63,8 @@ export function TaskKanbanCard({
   onTaskStatusUpdate,
   teamId
 }: Props) {
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
+
   // 프로젝트 번호 추출 (ID의 마지막 6자리 사용)
   const getProjectNumber = (id: string) => {
     return id.slice(-6).toUpperCase();
@@ -81,13 +84,20 @@ export function TaskKanbanCard({
   // 업무 삭제 핸들러
   const handleDelete = async () => {
     if (onTaskDelete && teamId) {
-      if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
-        try {
-          await onTaskDelete(task.id);
-        } catch (error) {
-          console.error('업무 삭제 실패:', error);
+      confirm({
+        title: "업무 삭제",
+        description: "정말로 이 업무를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+        confirmText: "삭제",
+        cancelText: "취소",
+        variant: "destructive",
+        onConfirm: async () => {
+          try {
+            await onTaskDelete(task.id);
+          } catch (error) {
+            console.error('업무 삭제 실패:', error);
+          }
         }
-      }
+      });
     }
   };
 
@@ -104,8 +114,10 @@ export function TaskKanbanCard({
 
 
   return (
-    <div 
-      className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200"
+    <>
+      {ConfirmDialogComponent}
+      <div 
+        className="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200"
       onClick={(e) => {
         // 드롭다운 메뉴가 클릭된 경우 이벤트 전파 중단
         if ((e.target as HTMLElement).closest('[role="menuitem"]') || 
@@ -228,6 +240,7 @@ export function TaskKanbanCard({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

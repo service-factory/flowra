@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertCircle, Palette, Plus, Send } from "lucide-react";
+import { useToastContext } from "./toast-provider";
 
 interface ProjectCreateModalProps {
   teamId?: string;
@@ -20,6 +21,7 @@ export function ProjectCreateModal({ teamId, trigger, onCreated }: ProjectCreate
   const [color, setColor] = useState("#3B82F6");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToastContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,11 +46,24 @@ export function ProjectCreateModal({ teamId, trigger, onCreated }: ProjectCreate
         const data = await res.json();
         throw new Error(data.error || "프로젝트 생성 실패");
       }
-      const { project } = await res.json();
+      const response = await res.json();
+      const project = response.data;
+      
       onCreated?.(project);
-      setOpen(false);
+      
+      // 폼 리셋
       setName("");
       setDescription("");
+      
+      // 모달 바로 닫기
+      setOpen(false);
+      
+      // Toast 메시지 표시
+      toast({
+        title: "프로젝트 생성 완료",
+        description: "프로젝트가 성공적으로 생성되었습니다!",
+        variant: "success"
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "프로젝트 생성 실패");
     } finally {
@@ -91,6 +106,7 @@ export function ProjectCreateModal({ teamId, trigger, onCreated }: ProjectCreate
                 <span className="text-sm">{error}</span>
               </div>
             )}
+            
             <div className="flex justify-end space-x-2 pt-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>취소</Button>
               <Button type="submit" disabled={!name.trim() || isSubmitting} className="bg-blue-600 hover:bg-blue-700">

@@ -55,7 +55,9 @@ export default function Dashboard() {
             
             <RecentActivityComponent activities={recentActivity} isLoading={isLoading} />
             
-            <DiscordIntegration discordStatus={discordStatus} />
+            {!discordStatus.connected && (
+              <DiscordIntegration discordStatus={discordStatus} />
+            )}
             
             <QuickActions onTaskCreate={() => {}} />
             </div>

@@ -80,12 +80,17 @@ export const TasksToolbar = memo(function TasksToolbar({
 
       try {
         const response = await customFetch.getFetch<undefined, {
-          connected: boolean;
-          guild?: { name: string; icon?: string };
-        }>({ url: '/api/discord/status' });
+          success: boolean;
+          data: {
+            connected: boolean;
+            guild?: { name: string; icon?: string };
+          };
+        }>({ 
+          url: `/api/discord/status?teamId=${currentTeam.id}` 
+        });
         
         setDiscordStatus({
-          connected: response.connected,
+          connected: response.data?.connected || false,
           loading: false
         });
       } catch (error) {

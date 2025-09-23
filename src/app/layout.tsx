@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { ClientOnly } from "@/components/client-only";
+import { ToastProvider } from "@/components/toast-provider";
 
 // Discord 스케줄러 자동 초기화 (서버 사이드에서만 실행)
 if (typeof window === 'undefined') {
@@ -44,7 +45,9 @@ export default function RootLayout({
         }>
           <QueryProvider>
             <AuthProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </AuthProvider>
           </QueryProvider>
         </ClientOnly>

@@ -14,6 +14,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog, useConfirmDialog } from "@/components/ui/confirm-dialog";
 import { MoreHorizontal, Trash2, RefreshCw, Link, ChevronRight, MessageSquare, Paperclip } from "lucide-react";
 import React from "react";
 import { TaskStatus } from "@/types";
@@ -62,6 +63,8 @@ export function TaskListCard({
   onTaskStatusUpdate,
   teamId
 }: Props) {
+  const { confirm, ConfirmDialogComponent } = useConfirmDialog();
+
   // 프로젝트 번호 추출 (ID의 마지막 6자리 사용)
   const getProjectNumber = (id: string) => {
     return id.slice(-6).toUpperCase();
@@ -81,13 +84,20 @@ export function TaskListCard({
   // 업무 삭제 핸들러
   const handleDelete = async () => {
     if (onTaskDelete && teamId) {
-      if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
-        try {
-          await onTaskDelete(task.id);
-        } catch (error) {
-          console.error('업무 삭제 실패:', error);
+      confirm({
+        title: "업무 삭제",
+        description: "정말로 이 업무를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+        confirmText: "삭제",
+        cancelText: "취소",
+        variant: "destructive",
+        onConfirm: async () => {
+          try {
+            await onTaskDelete(task.id);
+          } catch (error) {
+            console.error('업무 삭제 실패:', error);
+          }
         }
-      }
+      });
     }
   };
 
@@ -102,8 +112,10 @@ export function TaskListCard({
   };
 
   return (
-    <div 
-      className="group relative bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer"
+    <>
+      {ConfirmDialogComponent}
+      <div 
+        className="group relative bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-150 cursor-pointer"
       onClick={(e) => {
         // 드롭다운 메뉴가 클릭된 경우 이벤트 전파 중단
         if ((e.target as HTMLElement).closest('[role="menuitem"]') || 
@@ -302,6 +314,7 @@ export function TaskListCard({
         </div>
       </div>
     </div>
+    </>
   );
 }
 

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProjectCreateModal } from "./project-create-modal";
+import { useToastContext } from "./toast-provider";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,8 @@ import {
   Timer,
   Sparkles,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckCircle
 } from "lucide-react";
 
 interface TaskCreateModalProps {
@@ -91,7 +93,7 @@ const mockTeamTags = [
 const TaskCreateModal = ({ 
   trigger, 
   onTaskCreate, 
-  initialStatus, 
+  initialStatus,
   initialDueDate, 
   teamId,
   projectId,
@@ -103,6 +105,7 @@ const TaskCreateModal = ({
 }: TaskCreateModalProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToastContext();
   
   // 기본 정보 (필수)
   const [title, setTitle] = useState("");
@@ -184,11 +187,20 @@ const TaskCreateModal = ({
       const result = await response.json();
       
       // 부모 컴포넌트에 전달
-      onTaskCreate?.(result.task);
+      onTaskCreate?.(result.data);
       
       // 폼 리셋
       resetForm();
-      setOpen(false);
+      
+      // 모달 바로 닫기
+      handleOpenChange(false);
+      
+      // Toast 메시지 표시
+      toast({
+        title: "업무 생성 완료",
+        description: "업무가 성공적으로 생성되었습니다!",
+        variant: "success"
+      });
       
     } catch (error) {
       console.error('업무 생성 실패:', error);
@@ -459,8 +471,10 @@ const TaskCreateModal = ({
                   <ProjectCreateModal 
                     teamId={teamId}
                     onCreated={(project) => {
-                      // 즉시 선택
-                      setProjectIdState(project.id);
+                      // 즉시 선택 (안전한 접근)
+                      if (project?.id) {
+                        setProjectIdState(project.id);
+                      }
                     }}
                   />
                 </div>
@@ -649,6 +663,7 @@ const TaskCreateModal = ({
                 <span className="text-sm">{errors.submit}</span>
               </div>
             )}
+            
 
             {/* 액션 버튼 */}
             <div className="flex items-center justify-between pt-4 border-t">
