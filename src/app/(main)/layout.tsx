@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LeftNavigationBar } from '@/components/left-navigation-bar';
 import useAuth from '@/hooks/useAuth';
@@ -16,6 +16,13 @@ export default function MainLayout({
   const pathname = usePathname();
   
   const { teamMemberships, currentTeam, isLoading: authLoading, user } = useAuth();
+
+  // 비로그인 시 메인 페이지로 리다이렉트
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/');
+    }
+  }, [authLoading, user, router]);
 
   // 현재 활성 페이지 결정
   const getActivePage = () => {
@@ -101,20 +108,8 @@ export default function MainLayout({
     );
   }
 
-  // 인증되지 않은 사용자
   if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            로그인이 필요합니다
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            앱을 사용하려면 로그인해주세요.
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
