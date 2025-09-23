@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { getAppBaseUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Logo } from '@/components/ui/logo';
@@ -13,9 +12,10 @@ import { X, Sparkles, Zap, Users, Shield, Clock } from 'lucide-react';
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const supabase = createClient();
@@ -25,7 +25,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setIsLoading(true);
       setLoadingProvider(provider);
 
-      const redirectUrl = getAppBaseUrl();
+      // 현재 페이지 URL에 자동 처리 파라미터 추가
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('autoProcess', 'true');
+      const redirectUrl = currentUrl.toString();
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
@@ -39,6 +42,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         alert(`${provider === 'kakao' ? '카카오' : '구글'} 로그인 중 오류가 발생했습니다.`);
         setIsLoading(false);
         setLoadingProvider(null);
+      } else {
+        // OAuth 로그인 성공 시 콜백 호출 (페이지 새로고침으로 인해 실제로는 호출되지 않을 수 있음)
+        onLoginSuccess?.();
       }
     } catch (error) {
       console.error(`${provider} login error:`, error);

@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { getFetch, postFetch } from '@/lib/requests/customFetch';
+import { LoginModal } from '@/components/login-modal';
+import { useToastContext } from '@/components/toast-provider';
 
 interface InvitationData {
   id: string;
@@ -30,15 +32,19 @@ export default function TeamInvitePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, refreshTeamData } = useAuth();
+  const { toast } = useToastContext();
 
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isProcessingAfterLogin, setIsProcessingAfterLogin] = useState(false);
 
   const invitationId = params?.invitationId as string;
   const email = searchParams?.get('email');
+  const autoProcess = searchParams?.get('autoProcess') === 'true';
 
   const roleNames = {
     admin: '관리자',
@@ -69,18 +75,8 @@ export default function TeamInvitePage() {
     }
   }, [invitationId, email]);
 
-  // 초대 정보 로드
-  useEffect(() => {
-    if (!invitationId || !email) {
-      setError('잘못된 초대 링크입니다');
-      setLoading(false);
-      return;
-    }
-
-    loadInvitation();
-  }, [invitationId, email, loadInvitation]);
-
-  const handleAcceptInvitation = async () => {
+  // 초대 수락 처리 함수
+  const handleAcceptInvitation = useCallback(async () => {
     if (!user || !invitation || !email) {
       setError('로그인이 필요합니다');
       return;
@@ -95,24 +91,89 @@ export default function TeamInvitePage() {
       setAccepting(true);
       setError(null);
 
-      const response = await postFetch<{ email: string }, { success: boolean; data?: { redirectUrl?: string }; error?: string }>({
+      const response = await postFetch<{ email: string }, { success: boolean; data?: { redirectUrl?: string; message?: string; team?: any; member?: any }; error?: string }>({
         url: `/api/teams/invitations/${invitationId}/accept`,
         body: { email }
       });
 
       if (response.success && response.data) {
+        // 팀 데이터 새로고침
+        await refreshTeamData();
+        
+        // 성공 메시지 표시
+        toast({
+          title: "팀 초대 수락 완료",
+          description: response.data.message || `${invitation.team.name} 팀에 성공적으로 참여했습니다!`,
+          variant: "success"
+        });
+
         // 성공 시 팀 페이지로 리다이렉트
         const redirectUrl = response.data.redirectUrl || `/team/${invitation.team.slug || invitation.team.id}`;
         router.push(redirectUrl);
       } else {
-        setError(response.error || '초대 수락에 실패했습니다');
+        const errorMessage = response.error || '초대 수락에 실패했습니다';
+        setError(errorMessage);
+        toast({
+          title: "초대 수락 실패",
+          description: errorMessage,
+          variant: "destructive"
+        });
       }
     } catch (err) {
       console.error('초대 수락 실패:', err);
-      setError('초대 수락 중 오류가 발생했습니다');
+      const errorMessage = '초대 수락 중 오류가 발생했습니다';
+      setError(errorMessage);
+      toast({
+        title: "오류 발생",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setAccepting(false);
     }
+  }, [user, invitation, email, invitationId, refreshTeamData, toast, router]);
+
+  // 초대 정보 로드
+  useEffect(() => {
+    if (!invitationId || !email) {
+      setError('잘못된 초대 링크입니다');
+      setLoading(false);
+      return;
+    }
+
+    loadInvitation();
+  }, [invitationId, email, loadInvitation]);
+
+  // 로그인 후 자동 처리
+  useEffect(() => {
+    if (user && invitation && !isProcessingAfterLogin && !accepting && !error) {
+      // 이메일 일치 확인
+      if (user.email === email) {
+        setIsProcessingAfterLogin(true);
+        // 자동으로 초대 수락 처리
+        handleAcceptInvitation();
+      } else {
+        setError('초대받은 이메일과 로그인한 계정이 일치하지 않습니다');
+      }
+    }
+  }, [user, invitation, email, isProcessingAfterLogin, accepting, error, handleAcceptInvitation]);
+
+  // URL 파라미터로 자동 처리 요청된 경우
+  useEffect(() => {
+    if (autoProcess && user && invitation && !isProcessingAfterLogin && !accepting && !error) {
+      if (user.email === email) {
+        setIsProcessingAfterLogin(true);
+        handleAcceptInvitation();
+      } else {
+        setError('초대받은 이메일과 로그인한 계정이 일치하지 않습니다');
+      }
+    }
+  }, [autoProcess, user, invitation, isProcessingAfterLogin, accepting, error, email, handleAcceptInvitation]);
+
+  // 로그인 모달 닫기 처리
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    // 로그인 성공 후 자동 처리 로직은 useEffect에서 처리
   };
 
   const handleDeclineInvitation = async () => {
@@ -125,7 +186,9 @@ export default function TeamInvitePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">초대 정보를 불러오는 중...</p>
+          <p className="text-gray-600">
+            {authLoading ? '로그인 상태를 확인하는 중...' : '초대 정보를 불러오는 중...'}
+          </p>
         </div>
       </div>
     );
@@ -155,7 +218,7 @@ export default function TeamInvitePage() {
     );
   }
 
-  if (!user) {
+  if (!user && !authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="max-w-md w-full mx-4 p-8">
@@ -168,13 +231,20 @@ export default function TeamInvitePage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-2">로그인이 필요합니다</h1>
             <p className="text-gray-600 mb-6">팀 초대를 수락하려면 먼저 로그인해주세요.</p>
             <Button
-              onClick={() => router.push(`/?login=true&redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`)}
+              onClick={() => setShowLoginModal(true)}
               className="w-full"
             >
               로그인하기
             </Button>
           </div>
         </Card>
+        
+        {/* 로그인 모달 */}
+        <LoginModal 
+          isOpen={showLoginModal} 
+          onClose={() => setShowLoginModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
       </div>
     );
   }
@@ -184,7 +254,9 @@ export default function TeamInvitePage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">초대 정보를 확인하는 중...</p>
+          <p className="text-gray-600">
+            {isProcessingAfterLogin ? '자동으로 초대를 처리하는 중...' : '초대 정보를 확인하는 중...'}
+          </p>
         </div>
       </div>
     );
@@ -206,6 +278,11 @@ export default function TeamInvitePage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">팀 초대</h1>
           <p className="text-gray-600 mb-8">
             <span className="font-medium">{invitation.inviter.name}</span>님이 팀에 초대했습니다
+            {isProcessingAfterLogin && (
+              <span className="block mt-2 text-sm text-blue-600 font-medium">
+                🔄 자동으로 초대를 처리하고 있습니다...
+              </span>
+            )}
           </p>
         </div>
 
@@ -255,11 +332,21 @@ export default function TeamInvitePage() {
         )}
 
         {/* 이메일 불일치 경고 */}
-        {user.email !== email && (
+        {user && user.email !== email && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
             <p className="text-orange-700 text-sm">
               ⚠️ 초대받은 이메일({email})과 로그인한 계정({user.email})이 일치하지 않습니다.
             </p>
+            <div className="mt-3">
+              <Button
+                onClick={() => setShowLoginModal(true)}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                올바른 계정으로 로그인하기
+              </Button>
+            </div>
           </div>
         )}
 
@@ -267,15 +354,15 @@ export default function TeamInvitePage() {
         <div className="space-y-3">
           <Button
             onClick={handleAcceptInvitation}
-            disabled={accepting || isExpired || isAlreadyProcessed || user.email !== email}
+            disabled={accepting || isExpired || isAlreadyProcessed || (user && user.email !== email) || isProcessingAfterLogin}
             className="w-full"
           >
-            {accepting ? '처리 중...' : '초대 수락하기'}
+            {accepting ? '처리 중...' : isProcessingAfterLogin ? '자동 처리 중...' : '초대 수락하기'}
           </Button>
           
           <Button
             onClick={handleDeclineInvitation}
-            disabled={accepting || isExpired || isAlreadyProcessed}
+            disabled={accepting || isExpired || isAlreadyProcessed || isProcessingAfterLogin}
             variant="outline"
             className="w-full"
           >
@@ -296,6 +383,13 @@ export default function TeamInvitePage() {
           </p>
         )}
       </Card>
+      
+      {/* 로그인 모달 (로그인된 상태에서도 표시 가능) */}
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }
