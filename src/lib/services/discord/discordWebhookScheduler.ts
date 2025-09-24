@@ -56,21 +56,21 @@ export class DiscordWebhookScheduler {
   /**
    * 외부 트리거용: 리마인더 한 번 실행
    */
-  public async tickReminders(): Promise<void> {
-    await this.checkAndSendReminders();
+  public async tickReminders(teamIdFilter?: string): Promise<void> {
+    await this.checkAndSendReminders(teamIdFilter);
   }
 
   /**
    * 외부 트리거용: 예약 작업 즉시 실행
    */
-  public async runAllNow(): Promise<void> {
-    await this.runScheduledTasks();
+  public async runAllNow(teamIdFilter?: string): Promise<void> {
+    await this.runScheduledTasks(teamIdFilter);
   }
 
   /**
    * 현재 시간에 맞는 리마인드 발송 체크
    */
-  private async checkAndSendReminders() {
+  private async checkAndSendReminders(teamIdFilter?: string) {
     try {
       // 오늘 날짜 (YYYY-MM-DD 형식)
       const today = new Date().toISOString().split('T')[0];
@@ -96,7 +96,7 @@ export class DiscordWebhookScheduler {
         if (matchingSettings.length > 0) {          
           // 각 사용자별로 리마인드 발송
           for (const setting of matchingSettings) {
-            await this.sendUserReminder(setting.user_id);
+            await this.sendUserReminder(setting.user_id, teamIdFilter);
           }
           
           // 오늘 알림을 보냈다고 기록
@@ -125,12 +125,12 @@ export class DiscordWebhookScheduler {
   /**
    * 예약된 작업 실행
    */
-  private async runScheduledTasks() {
+  private async runScheduledTasks(teamIdFilter?: string) {
     try {      
       await Promise.all([
-        this.checkDueDateReminders(),
-        this.checkOverdueTasks(),
-        this.checkCompletedTasks(),
+        this.checkDueDateReminders(teamIdFilter),
+        this.checkOverdueTasks(teamIdFilter),
+        this.checkCompletedTasks(teamIdFilter),
       ]);
     } catch (error) {
       console.error('Discord 예약 작업 실행 오류:', error);
@@ -140,7 +140,7 @@ export class DiscordWebhookScheduler {
   /**
    * 마감일 알림 확인
    */
-  private async checkDueDateReminders() {
+  private async checkDueDateReminders(teamIdFilter?: string) {
     try {
       // 오늘 마감인 업무 조회
       const today = new Date();
@@ -150,7 +150,7 @@ export class DiscordWebhookScheduler {
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
 
-      const { data: dueTasks, error } = await this.supabase
+      let dueQuery = this.supabase
         .from('tasks')
         .select(`
           *,
@@ -161,6 +161,12 @@ export class DiscordWebhookScheduler {
         .not('due_date', 'is', null)
         .gte('due_date', today.toISOString())
         .lt('due_date', tomorrow.toISOString());
+
+      if (teamIdFilter) {
+        dueQuery = dueQuery.eq('team_id', teamIdFilter);
+      }
+
+      const { data: dueTasks, error } = await dueQuery;
 
       if (error) {
         console.error('마감일 업무 조회 오류:', error);
@@ -215,11 +221,11 @@ export class DiscordWebhookScheduler {
   /**
    * 연체 업무 확인
    */
-  private async checkOverdueTasks() {
+  private async checkOverdueTasks(teamIdFilter?: string) {
     try {
       const now = new Date();
 
-      const { data: overdueTasks, error } = await this.supabase
+      let overdueQuery = this.supabase
         .from('tasks')
         .select(`
           *,
@@ -229,6 +235,12 @@ export class DiscordWebhookScheduler {
         .in('status', ['pending', 'in_progress'])
         .not('due_date', 'is', null)
         .lt('due_date', now.toISOString());
+
+      if (teamIdFilter) {
+        overdueQuery = overdueQuery.eq('team_id', teamIdFilter);
+      }
+
+      const { data: overdueTasks, error } = await overdueQuery;
 
       if (error) {
         console.error('연체 업무 조회 오류:', error);
@@ -290,7 +302,7 @@ export class DiscordWebhookScheduler {
   /**
    * 특정 사용자에게 업무 리마인드 발송
    */
-  private async sendUserReminder(userId: string) {
+  private async sendUserReminder(userId: string, teamIdFilter?: string) {
     try {
       // 사용자 정보 조회
       const { data: user, error: userError } = await this.supabase
@@ -318,6 +330,9 @@ export class DiscordWebhookScheduler {
       // 각 팀별로 업무 리마인드 발송
       for (const member of teamMembers) {
         const team = member.team;
+        if (teamIdFilter && team?.id !== teamIdFilter) {
+          continue;
+        }
 
         // 내일 마감 업무 조회
         const tomorrow = new Date();
@@ -562,12 +577,12 @@ export class DiscordWebhookScheduler {
   /**
    * 완료된 업무 확인
    */
-  private async checkCompletedTasks() {
+  private async checkCompletedTasks(teamIdFilter?: string) {
     try {
       // 최근 완료된 업무 조회 (1시간 이내)
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
-      const { data: completedTasks, error } = await this.supabase
+      let completedQuery = this.supabase
         .from('tasks')
         .select(`
           *,
@@ -576,6 +591,12 @@ export class DiscordWebhookScheduler {
         `)
         .eq('status', 'completed')
         .gte('completed_at', oneHourAgo.toISOString());
+
+      if (teamIdFilter) {
+        completedQuery = completedQuery.eq('team_id', teamIdFilter);
+      }
+
+      const { data: completedTasks, error } = await completedQuery;
 
       if (error) {
         console.error('완료된 업무 조회 오류:', error);
