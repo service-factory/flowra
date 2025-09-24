@@ -54,6 +54,20 @@ export class DiscordWebhookScheduler {
   }
 
   /**
+   * 외부 트리거용: 리마인더 한 번 실행
+   */
+  public async tickReminders(): Promise<void> {
+    await this.checkAndSendReminders();
+  }
+
+  /**
+   * 외부 트리거용: 예약 작업 즉시 실행
+   */
+  public async runAllNow(): Promise<void> {
+    await this.runScheduledTasks();
+  }
+
+  /**
    * 현재 시간에 맞는 리마인드 발송 체크
    */
   private async checkAndSendReminders() {
