@@ -426,7 +426,7 @@ export class DiscordBotService {
    */
   async sendNotificationWithButtons(channelId: string, embed: any, taskId: string | undefined, notificationType: string = 'general'): Promise<void> {
     try {
-      if (!this.discordJS || !this.client) {
+      if (!this.discordJS) {
         throw new Error('Discord.js가 초기화되지 않았습니다.');
       }
 
@@ -575,13 +575,20 @@ export class DiscordBotService {
           )
         );
 
-      const channel = await this.client.channels.fetch(channelId);
-      if (channel && channel.isTextBased()) {
-        await channel.send({ 
-          embeds: [embed], 
-          components: [primaryRow, secondaryRow] 
-        });
+      // REST API를 사용하여 메시지 전송 (게이트웨이 의존 제거)
+      if (!this.rest) {
+        this.rest = new this.discordJS.REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN!);
       }
+
+      const payload = {
+        embeds: [embed],
+        components: [primaryRow.toJSON(), secondaryRow.toJSON()],
+      } as any;
+
+      await this.rest.post(
+        this.discordJS.Routes.channelMessages(channelId),
+        { body: payload }
+      );
     } catch (error) {
       console.error('Discord 알림 발송 오류:', error);
       throw error;

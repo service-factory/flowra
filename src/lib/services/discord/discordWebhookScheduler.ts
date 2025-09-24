@@ -86,16 +86,22 @@ export class DiscordWebhookScheduler {
       for (const [timezone, settings] of settingsByTimezone.entries()) {
         // 해당 시간대의 현재 시간 계산
         const timezoneTime = this.getCurrentTimeInTimezone(timezone);
-        const timezoneTimeString = timezoneTime.toTimeString().slice(0, 5);
         
-        // 현재 시간에 정확히 맞는 설정 찾기 (분 단위까지 정확히 일치)
+        // ±4분 허용 윈도우
         const matchingSettings = settings.filter(setting => {
-          return setting.reminder_time === timezoneTimeString && setting.reminder_enabled;
+          if (!setting.reminder_enabled) return false;
+          if (!setting.reminder_time) return false;
+          const [hh, mm] = setting.reminder_time.split(':').map(Number);
+          const scheduled = new Date(timezoneTime);
+          scheduled.setHours(hh, mm, 0, 0);
+          const diffMs = Math.abs(timezoneTime.getTime() - scheduled.getTime());
+          return diffMs <= 4 * 60 * 1000; // 4분 이내 허용
         });
         
         if (matchingSettings.length > 0) {          
           // 각 사용자별로 리마인드 발송
           for (const setting of matchingSettings) {
+            // 중복 방지: 동일 사용자/팀에 대해 하루 1회만
             await this.sendUserReminder(setting.user_id, teamIdFilter);
           }
           
@@ -335,6 +341,22 @@ export class DiscordWebhookScheduler {
           continue;
         }
 
+        // 하루 중복 발송 방지: notifications 테이블 체크
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { data: alreadySent } = await this.supabase
+          .from('notifications')
+          .select('id')
+          .eq('type', 'daily_reminder')
+          .eq('user_id', userId)
+          .eq('team_id', team.id)
+          .gte('created_at', todayStart.toISOString())
+          .maybeSingle();
+
+        if (alreadySent) {
+          continue;
+        }
+
         // 내일 마감 업무 조회
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -367,6 +389,16 @@ export class DiscordWebhookScheduler {
             await this.sendNoTaskReminderWithBot(botService, team.id, user.name);
           }
         }
+
+        // 발송 기록 저장
+        await this.supabase
+          .from('notifications')
+          .insert({
+            type: 'daily_reminder',
+            user_id: userId,
+            team_id: team.id,
+            data: { has_tasks: !!(tomorrowTasks && tomorrowTasks.length > 0) }
+          });
       }
     } catch (error) {
       console.error('사용자 리마인드 발송 오류:', error);
