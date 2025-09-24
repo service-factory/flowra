@@ -7,6 +7,10 @@ import { createSuccessResponse, createErrorResponse } from '@/lib/auth/middlewar
 export async function GET() {
   try {
     const { discordWebhookScheduler } = await import('@/lib/services/discord/discordWebhookScheduler');
+    const { initializeDiscordBot } = await import('@/lib/services/discord/discordBotService');
+
+    // 서버리스 환경에서 매 호출 시 봇 초기화 보장
+    await initializeDiscordBot();
 
     // 리마인더 틱 실행 및 예약 작업 즉시 실행
     await discordWebhookScheduler.tickReminders();
