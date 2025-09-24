@@ -199,6 +199,7 @@ const useAuth = () => {
     signOut: signOutMutation.mutate,
     refreshTeamData,
     isSigningOut: signOutMutation.isPending,
+    setCurrentTeam,
   };
 };
 

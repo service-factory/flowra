@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('reminder_time은 HH:MM 형식이어야 합니다.', 400);
     }
 
-    const supabase = createServiceClient();
+    const supabase = createServiceClient() as any; // widen types for non-generated table
 
     // upsert
     const now = new Date().toISOString();

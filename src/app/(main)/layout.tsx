@@ -15,14 +15,21 @@ export default function MainLayout({
   const router = useRouter();
   const pathname = usePathname();
   
-  const { teamMemberships, currentTeam, isLoading: authLoading, user } = useAuth();
+  const { teamMemberships, currentTeam, isLoading: authLoading, user, setCurrentTeam } = useAuth();
+  const [authReady, setAuthReady] = useState(false);
 
   // 비로그인 시 메인 페이지로 리다이렉트
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading) {
+      setAuthReady(true);
+    }
+  }, [authLoading]);
+
+  useEffect(() => {
+    if (authReady && !user) {
       router.replace('/');
     }
-  }, [authLoading, user, router]);
+  }, [authReady, user, router]);
 
   // 현재 활성 페이지 결정
   const getActivePage = () => {
@@ -95,6 +102,18 @@ export default function MainLayout({
   }, [teamMemberships]);
 
   const pageInfo = getPageInfo();
+
+  // URL의 teamId와 스토어의 currentTeam 동기화
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const teamId = params.get('teamId');
+    if (teamId && teamMemberships.length > 0) {
+      const found = teamMemberships.find(m => m.team_id === teamId);
+      if (found && (!currentTeam || currentTeam.id !== found.team_id)) {
+        setCurrentTeam(found.teams || null);
+      }
+    }
+  }, [teamMemberships, currentTeam, setCurrentTeam]);
 
   // 로딩 상태
   if (authLoading) {

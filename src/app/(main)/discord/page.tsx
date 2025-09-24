@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { DiscordHeader } from './components/DiscordHeader';
 import { DiscordStatusCards } from './components/DiscordStatusCards';
 import { DiscordDetails } from './components/DiscordDetails';
@@ -10,8 +12,22 @@ import { DiscordBotTest } from './components/DiscordBotTest';
 import { DiscordAlerts } from './components/DiscordAlerts';
 import { useDiscordData } from './hooks/useDiscordData';
 import { DiscordPageSkeleton } from './components/DiscordLoadingSkeleton';
+import useAuth from '@/hooks/useAuth';
 
 export default function DiscordPage() {
+  const [isLocalCronLoading, setIsLocalCronLoading] = useState(false);
+  const { currentTeam } = useAuth();
+
+  const handleLocalCronTest = async () => {
+    try {
+      setIsLocalCronLoading(true);
+      await fetch(`/api/discord/cron?teamId=${currentTeam?.id}`);
+    } catch (e) {
+      console.error('로컬 크론 테스트 오류:', e);
+    } finally {
+      setIsLocalCronLoading(false);
+    }
+  };
   const {
     discordStatus,
     isLoading,
@@ -47,6 +63,14 @@ export default function DiscordPage() {
           isChecking={isChecking}
           isLoading={isLoading}
         />
+
+        {process.env.NODE_ENV === 'development' && (
+          <div className="p-4">
+            <Button onClick={handleLocalCronTest} disabled={isLocalCronLoading}>
+              {isLocalCronLoading ? '크론 실행 중...' : '로컬 테스트: 크론 실행'}
+            </Button>
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-6xl mx-auto space-y-6">
