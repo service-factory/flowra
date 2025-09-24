@@ -1,5 +1,4 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import { discordWebhookService } from './discordWebhookService';
 import { discordUserSettingsService } from './discordUserSettings';
 import { getDiscordBotService } from './discordBotService';
 // import type { Task } from '@/types';
@@ -294,7 +293,7 @@ export class DiscordWebhookScheduler {
       // 사용자가 속한 팀 조회
       const { data: teamMembers, error: teamError } = await this.supabase
         .from('team_members')
-        .select('team_id, team:teams(id, name, discord_webhook_url)')
+        .select('team_id, team:teams(id, name, discord_channel_id)')
         .eq('user_id', userId);
 
       if (teamError || !teamMembers || teamMembers.length === 0) {
@@ -305,9 +304,6 @@ export class DiscordWebhookScheduler {
       // 각 팀별로 업무 리마인드 발송
       for (const member of teamMembers) {
         const team = member.team;
-        if (!team?.discord_webhook_url) {
-          continue;
-        }
 
         // 내일 마감 업무 조회
         const tomorrow = new Date();
@@ -339,13 +335,6 @@ export class DiscordWebhookScheduler {
             await this.sendTaskReminderWithBot(botService, team.id, user.name, tomorrowTasks);
           } else {
             await this.sendNoTaskReminderWithBot(botService, team.id, user.name);
-          }
-        } else {
-          // 봇이 없으면 웹훅으로 fallback
-          if (tomorrowTasks && tomorrowTasks.length > 0) {
-            await this.sendTaskReminderWithActions(team.discord_webhook_url, user.name, tomorrowTasks);
-          } else {
-            await this.sendNoTaskReminder(team.discord_webhook_url, user.name);
           }
         }
       }
@@ -621,18 +610,7 @@ export class DiscordWebhookScheduler {
     }
   }
 
-  /**
-   * 팀 웹훅 URL 조회
-   */
-  private async getTeamWebhookUrl(teamId: string): Promise<string | null> {
-    try {
-      const config = await discordWebhookService.getTeamConfig(teamId);
-      return config?.webhookUrl || null;
-    } catch (error) {
-      console.error('팀 웹훅 URL 조회 오류:', error);
-      return null;
-    }
-  }
+  // 웹훅 관련 로직 제거됨 (봇 전환)
 
   /**
    * 스케줄러 상태 조회
