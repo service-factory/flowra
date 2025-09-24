@@ -192,9 +192,9 @@ export class DiscordWebhookScheduler {
               await botService.sendNotificationWithButtons(
                 teamData.discord_channel_id,
                 {
-                  title: '⏰ 마감일 알림',
-                  description: `**${task.title}** 업무의 마감일이 다가왔습니다.`,
-                  color: 0xff8800, // 주황색
+                  title: '⏰ 마감 예정 안내',
+                  description: `다음 업무의 마감 시점이 임박했습니다. 필요 시 우선순위와 일정을 조정해 주세요.\n\n• 업무: **${task.title}**`,
+                  color: 0x6366f1, // 인디고(브랜드 톤)
                   fields: [
                     { name: '업무 제목', value: task.title, inline: true },
                     { name: '마감일', value: task.due_date ? new Date(task.due_date).toLocaleDateString('ko-KR') : '미설정', inline: true },
@@ -207,7 +207,8 @@ export class DiscordWebhookScheduler {
                   },
                   timestamp: new Date().toISOString(),
                 },
-                task.id
+                task.id,
+                'due_date'
               );
             }
         }
@@ -384,9 +385,9 @@ export class DiscordWebhookScheduler {
       }).join('\n\n');
 
       const embed = {
-        title: `📋 ${userName}님의 내일 마감 업무`,
-        description: `다음 업무들이 내일 마감입니다:\n\n${taskList}`,
-        color: 0x3498db, // 파란색
+        title: `📋 ${userName}님의 내일 마감 예정 업무`,
+        description: `내일 마감되는 업무 목록입니다. 필요 시 일정을 조정하거나 진행을 시작해 주세요.\n\n${taskList}`,
+        color: 0x6366f1, // 인디고(브랜드 톤)
         fields: [
           {
             name: '📊 업무 현황',
@@ -414,7 +415,8 @@ export class DiscordWebhookScheduler {
         await botService.sendNotificationWithButtons(
           teamData.discord_channel_id,
           embed,
-          firstTask.id
+          firstTask.id,
+          'reminder'
         );
       }
 
@@ -431,9 +433,9 @@ export class DiscordWebhookScheduler {
   private async sendNoTaskReminderWithBot(botService: any, teamId: string, userName: string) {
     try {
       const embed = {
-        title: `🎉 ${userName}님의 내일 업무`,
-        description: `내일 마감 예정인 업무가 없습니다!\n\n오늘 하루도 화이팅하세요! 💪`,
-        color: 0x2ecc71, // 초록색
+        title: `✅ ${userName}님의 내일 마감 예정 업무 없음`,
+        description: `내일 마감 예정인 업무가 없습니다. 현재 계획을 유지해 주세요.`,
+        color: 0x10b981, // 에메랄드 (완료/양호 톤)
         footer: {
           text: 'Flowra 업무 관리 시스템',
           icon_url: 'https://cdn.discordapp.com/embed/avatars/0.png'
@@ -452,7 +454,8 @@ export class DiscordWebhookScheduler {
         await botService.sendNotificationWithButtons(
           teamData.discord_channel_id,
           embed,
-          undefined // taskId 없음
+          undefined, // taskId 없음
+          'reminder'
         );
       }
       return true;
@@ -622,9 +625,9 @@ export class DiscordWebhookScheduler {
             await botService.sendNotificationWithButtons(
               teamData.discord_channel_id,
               {
-                title: '🎉 업무 완료!',
-                description: `**${task.title}** 업무가 완료되었습니다.`,
-                color: 0x00ff00, // 초록색
+                title: '🎉 업무 완료 알림',
+                description: `다음 업무가 완료로 처리되었습니다.\n\n• 업무: **${task.title}**`,
+                color: 0x10b981, // 에메랄드(브랜드 톤)
                 fields: [
                   { name: '업무 제목', value: task.title, inline: true },
                   { name: '완료자', value: task.assignee?.name || '미지정', inline: true },
@@ -635,7 +638,8 @@ export class DiscordWebhookScheduler {
                 },
                 timestamp: new Date().toISOString(),
               },
-              task.id
+              task.id,
+              'completed'
             );
           }
         }

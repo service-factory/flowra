@@ -424,121 +424,128 @@ export class DiscordBotService {
   /**
    * 채널에 알림 메시지 발송 (개선된 버튼 포함)
    */
-  async sendNotificationWithButtons(channelId: string, embed: any, taskId: string, notificationType: string = 'general'): Promise<void> {
+  async sendNotificationWithButtons(channelId: string, embed: any, taskId: string | undefined, notificationType: string = 'general'): Promise<void> {
     try {
       if (!this.discordJS || !this.client) {
         throw new Error('Discord.js가 초기화되지 않았습니다.');
       }
 
       // 알림 타입별 맞춤형 버튼 구성
+      const subtle = {
+        Success: this.discordJS.ButtonStyle.Success,
+        Primary: this.discordJS.ButtonStyle.Secondary, // 강한 블루 대신 중립 톤
+        Secondary: this.discordJS.ButtonStyle.Secondary,
+        Danger: this.discordJS.ButtonStyle.Secondary // 과한 레드 사용 회피
+      };
+
       const buttonConfigs = {
         reminder: {
           primary: {
-            customId: `start_${taskId}`,
-            label: '지금 시작',
-            emoji: '🚀',
-            style: this.discordJS.ButtonStyle.Success
+            customId: taskId ? `start_${taskId}` : 'start_noop',
+            label: '진행 시작',
+            emoji: '▶️',
+            style: subtle.Success
           },
           secondary: [
             {
-              customId: `reschedule_${taskId}`,
+              customId: taskId ? `reschedule_${taskId}` : 'reschedule_noop',
               label: '일정 조정',
-              emoji: '📅',
-              style: this.discordJS.ButtonStyle.Primary
+              emoji: '🗓️',
+              style: subtle.Primary
             },
             {
-              customId: `view_${taskId}`,
+              customId: taskId ? `view_${taskId}` : 'view_noop',
               label: '상세보기',
               emoji: '👁️',
-              style: this.discordJS.ButtonStyle.Secondary
+              style: subtle.Secondary
             }
           ]
         },
         due_date: {
           primary: {
-            customId: `complete_${taskId}`,
+            customId: taskId ? `complete_${taskId}` : 'complete_noop',
             label: '완료 처리',
             emoji: '✅',
-            style: this.discordJS.ButtonStyle.Success
+            style: subtle.Success
           },
           secondary: [
             {
-              customId: `urgent_extend_${taskId}`,
-              label: '긴급 연장',
-              emoji: '🚨',
-              style: this.discordJS.ButtonStyle.Danger
+              customId: taskId ? `extend_${taskId}` : 'extend_noop',
+              label: '기한 연장',
+              emoji: '⏳',
+              style: subtle.Primary
             },
             {
-              customId: `view_${taskId}`,
+              customId: taskId ? `view_${taskId}` : 'view_noop',
               label: '상세보기',
               emoji: '📋',
-              style: this.discordJS.ButtonStyle.Secondary
+              style: subtle.Secondary
             }
           ]
         },
         overdue: {
           primary: {
-            customId: `complete_${taskId}`,
-            label: '즉시 완료',
-            emoji: '🔥',
-            style: this.discordJS.ButtonStyle.Danger
+            customId: taskId ? `complete_${taskId}` : 'complete_noop',
+            label: '완료 처리',
+            emoji: '✅',
+            style: subtle.Success
           },
           secondary: [
             {
-              customId: `urgent_extend_${taskId}`,
-              label: '긴급 연장',
-              emoji: '⚡',
-              style: this.discordJS.ButtonStyle.Danger
+              customId: taskId ? `extend_${taskId}` : 'extend_noop',
+              label: '기한 연장',
+              emoji: '⏳',
+              style: subtle.Primary
             },
             {
-              customId: `share_${taskId}`,
+              customId: taskId ? `share_${taskId}` : 'share_noop',
               label: '상황 공유',
-              emoji: '📢',
-              style: this.discordJS.ButtonStyle.Secondary
+              emoji: '📝',
+              style: subtle.Secondary
             }
           ]
         },
         completed: {
           primary: {
-            customId: `confirm_${taskId}`,
+            customId: taskId ? `confirm_${taskId}` : 'confirm_noop',
             label: '완료 확인',
             emoji: '🎉',
-            style: this.discordJS.ButtonStyle.Success
+            style: subtle.Success
           },
           secondary: [
             {
-              customId: `next_task_${taskId}`,
+              customId: taskId ? `next_task_${taskId}` : 'next_task_noop',
               label: '다음 업무',
               emoji: '➡️',
-              style: this.discordJS.ButtonStyle.Primary
+              style: subtle.Primary
             },
             {
-              customId: `share_${taskId}`,
+              customId: taskId ? `share_${taskId}` : 'share_noop',
               label: '성과 공유',
               emoji: '📊',
-              style: this.discordJS.ButtonStyle.Secondary
+              style: subtle.Secondary
             }
           ]
         },
         general: {
           primary: {
-            customId: `complete_${taskId}`,
+            customId: taskId ? `complete_${taskId}` : 'complete_noop',
             label: '완료',
             emoji: '✅',
-            style: this.discordJS.ButtonStyle.Success
+            style: subtle.Success
           },
           secondary: [
             {
-              customId: `extend_${taskId}`,
+              customId: taskId ? `extend_${taskId}` : 'extend_noop',
               label: '연장',
               emoji: '⏰',
-              style: this.discordJS.ButtonStyle.Primary
+              style: subtle.Primary
             },
             {
-              customId: `view_${taskId}`,
+              customId: taskId ? `view_${taskId}` : 'view_noop',
               label: '상세보기',
               emoji: '📋',
-              style: this.discordJS.ButtonStyle.Secondary
+              style: subtle.Secondary
             }
           ]
         }
