@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { ComponentType } from "react";
 import {
   Brain,
   Target,
@@ -63,7 +64,14 @@ export const ProductivityInsights = memo(function ProductivityInsights({
   };
 
   const getRecommendations = () => {
-    const recommendations = [];
+    type Recommendation = {
+      icon: ComponentType<{ className?: string }>;
+      title: string;
+      description: string;
+      action: string;
+      priority: 'high' | 'medium' | 'low';
+    };
+    const recommendations: Recommendation[] = [];
 
     if (stats.overdueTasks > 0) {
       recommendations.push({

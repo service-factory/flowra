@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Calendar,
   TrendingUp,
@@ -19,12 +18,8 @@ interface WelcomeSectionProps {
   isLoading?: boolean;
 }
 
-export const WelcomeSection = memo(function WelcomeSection({
-  stats,
-  currentTeam,
-  userName = "사용자",
-  isLoading = false
-}: WelcomeSectionProps) {
+export const WelcomeSection = memo(function WelcomeSection(props: WelcomeSectionProps) {
+  const { stats, currentTeam, userName = "사용자" } = props;
   const currentHour = new Date().getHours();
   const timeGreeting = currentHour < 12 ? "좋은 아침입니다" :
                       currentHour < 18 ? "좋은 오후입니다" : "수고하셨습니다";

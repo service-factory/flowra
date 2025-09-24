@@ -100,7 +100,6 @@ export const StatsCards = ({ stats, isLoading }: StatsCardsProps) => {
       {statsCards.map((stat, index) => {
         const TrendIcon = getTrendIcon(stat.trend, index === 3);
         const trendColor = getTrendColor(stat.trend, index === 3);
-        const isOverdue = index === 3;
 
         return (
           <Card key={stat.title} className="hover:shadow-md transition-shadow duration-200">
