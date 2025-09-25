@@ -11,7 +11,7 @@ export class DiscordWebhookScheduler {
   private intervalId: NodeJS.Timeout | null = null;
   private reminderIntervalId: NodeJS.Timeout | null = null;
   private supabase;
-  private lastReminderDate: string = ''; // 마지막 알림을 보낸 날짜 추적
+  // 전역 일자 잠금은 사용하지 않음. 사용자/팀 기준 일일 중복 방지에 의존.
 
   constructor() {
     this.supabase = createServiceClient();
@@ -75,10 +75,7 @@ export class DiscordWebhookScheduler {
       // 오늘 날짜 (YYYY-MM-DD 형식)
       const today = new Date().toISOString().split('T')[0];
       
-      // 이미 오늘 알림을 보냈다면 중복 방지
-      if (this.lastReminderDate === today) {
-        return;
-      }
+      // 전역 레벨 중복 방지는 제거. 사용자/팀 단위 dedup 사용
       
       // 모든 활성화된 사용자 설정 조회
       const settingsByTimezone = await discordUserSettingsService.getSettingsByTimezone();
@@ -98,16 +95,11 @@ export class DiscordWebhookScheduler {
           return diffMs <= 4 * 60 * 1000; // 4분 이내 허용
         });
         
-        if (matchingSettings.length > 0) {          
-          // 각 사용자별로 리마인드 발송
+        if (matchingSettings.length > 0) {
+          // 각 사용자별로 리마인드 발송 (모든 시간대 처리)
           for (const setting of matchingSettings) {
-            // 중복 방지: 동일 사용자/팀에 대해 하루 1회만
             await this.sendUserReminder(setting.user_id, teamIdFilter);
           }
-          
-          // 오늘 알림을 보냈다고 기록
-          this.lastReminderDate = today;
-          break; // 한 번에 하나의 시간대만 처리
         }
       }
     } catch (error) {
