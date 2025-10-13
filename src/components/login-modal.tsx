@@ -25,10 +25,9 @@ export function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps)
       setIsLoading(true);
       setLoadingProvider(provider);
 
-      // 현재 페이지 URL에 자동 처리 파라미터 추가
-      const currentUrl = new URL(window.location.href);
-      currentUrl.searchParams.set('autoProcess', 'true');
-      const redirectUrl = currentUrl.toString();
+      // 현재 환경의 origin을 사용하여 올바른 리다이렉트 URL 생성
+      const origin = window.location.origin;
+      const redirectUrl = `${origin}/?autoProcess=true`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,

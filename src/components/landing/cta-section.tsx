@@ -4,7 +4,11 @@ import React from 'react';
 import { Brand } from '@/components/ui/brand';
 import { ArrowRight, CheckCircle, Star, Zap } from 'lucide-react';
 
-const CTASection = () => {
+interface CTASectionProps {
+  onGetStarted: () => void;
+}
+
+const CTASection = ({ onGetStarted }: CTASectionProps) => {
   const testimonials = [
     {
       name: "김개발자",
@@ -99,7 +103,11 @@ const CTASection = () => {
           </div>
 
           <div className="mb-10">
-            <button className="group bg-blue-600 text-white px-12 py-6 rounded-xl font-bold text-xl hover:bg-blue-700 transition-all duration-200 inline-flex items-center gap-3 shadow-xl hover:shadow-2xl">
+            <button
+              type="button"
+              onClick={onGetStarted}
+              className="group bg-blue-600 text-white px-12 py-6 rounded-xl font-bold text-xl hover:bg-blue-700 transition-all duration-200 inline-flex items-center gap-3 shadow-xl hover:shadow-2xl"
+            >
               <Zap className="w-6 h-6" />
               무료로 시작하기
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />

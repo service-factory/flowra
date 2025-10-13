@@ -4,7 +4,11 @@ import React from 'react';
 import { Brand } from '@/components/ui/brand';
 import { ArrowRight, CheckCircle, Users, Zap } from 'lucide-react';
 
-const HeroSection = () => {
+interface HeroSectionProps {
+  onGetStarted: () => void;
+}
+
+const HeroSection = ({ onGetStarted }: HeroSectionProps) => {
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-white">
       {/* Clean Header */}
@@ -18,7 +22,11 @@ const HeroSection = () => {
             <a href="#workflow" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">
               기능
             </a>
-            <button className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200">
+            <button
+              type="button"
+              onClick={onGetStarted}
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200"
+            >
               시작하기
             </button>
           </div>
@@ -47,7 +55,11 @@ const HeroSection = () => {
 
           {/* Single Strong CTA */}
           <div className="mb-4">
-            <button className="group bg-blue-600 text-white px-10 py-5 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 inline-flex items-center gap-2 shadow-lg hover:shadow-xl">
+            <button
+              type="button"
+              onClick={onGetStarted}
+              className="group bg-blue-600 text-white px-10 py-5 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 inline-flex items-center gap-2 shadow-lg hover:shadow-xl"
+            >
               무료로 시작하기
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>

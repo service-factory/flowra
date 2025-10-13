@@ -8,7 +8,11 @@ import FeaturesSection from './features-section';
 import DiscordSection from './discord-section';
 import CTASection from './cta-section';
 
-const LandingPage = () => {
+interface LandingPageProps {
+  onGetStarted: () => void;
+}
+
+const LandingPage = ({ onGetStarted }: LandingPageProps) => {
   useEffect(() => {
     // Smooth scroll behavior for anchor links
     const handleAnchorClick = (e: Event) => {
@@ -33,7 +37,7 @@ const LandingPage = () => {
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <HeroSection />
+      <HeroSection onGetStarted={onGetStarted} />
 
       {/* Problem Section */}
       <ProblemSection />
@@ -51,7 +55,7 @@ const LandingPage = () => {
 
       {/* CTA Section */}
       <div id="pricing">
-        <CTASection />
+        <CTASection onGetStarted={onGetStarted} />
       </div>
     </main>
   );
