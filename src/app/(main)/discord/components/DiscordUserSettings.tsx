@@ -154,7 +154,6 @@ export const DiscordUserSettings = memo(function DiscordUserSettings({
             )}
           </Button>
         </div>
-        </div>
       </CardContent>
     </Card>
   );
